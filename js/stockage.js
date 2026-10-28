@@ -1,4 +1,4 @@
-// Connexion (lien ou code reçu par e-mail) et sauvegarde de la progression dans Supabase, avec copie locale de secours.
+// Connexion (lien reçu par e-mail, compte unique) et sauvegarde de la progression dans Supabase, avec copie locale de secours.
 // Table public.progress : une ligne par semaine (week = WEEK), protégée par RLS (chacun ne voit que ses lignes).
 const KEY = "marcel-" + WEEK;
 const emptyFood = () => ({ daily: {}, water: {}, batch: {}, courses: {} });
@@ -31,27 +31,16 @@ async function loadProgress() {
   setSync("Progression enregistrée en ligne.");
 }
 
-// Écran de connexion : on envoie un e-mail, Ben clique le lien ou tape le code à 6 chiffres
+// Écran de connexion : un seul compte (SUPABASE_LOGIN), le bouton envoie un lien de connexion à cette adresse
 const login = document.getElementById("login");
-let loginEmail = "";
 function showLogin(on) { login.hidden = !on; document.body.classList.toggle("locked", on); }
-function loginMsg(t) { document.getElementById("login-msg").textContent = t; }
 document.getElementById("login-form").addEventListener("submit", async e => {
   e.preventDefault();
-  const email = document.getElementById("login-email").value.trim();
-  const code = document.getElementById("login-code").value.trim();
   const btn = document.getElementById("login-btn");
   btn.disabled = true;
-  if (loginEmail && code) {
-    const { error } = await sb.auth.verifyOtp({ email: loginEmail, token: code, type: "email" });
-    if (error) loginMsg("Code incorrect ou expiré. Redemande un e-mail si besoin.");
-  } else {
-    const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
-    if (error) loginMsg("Envoi impossible : " + error.message);
-    else { loginEmail = email; document.getElementById("login-step2").hidden = false; loginMsg("E-mail envoyé. Clique le lien, ou tape le code reçu ci-dessous."); }
-  }
+  const { error } = await sb.auth.signInWithOtp({ email: SUPABASE_LOGIN, options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname } });
+  document.getElementById("login-msg").textContent = error ? "Envoi impossible : " + error.message : "E-mail envoyé : ouvre le lien reçu sur ce téléphone.";
   btn.disabled = false;
-  btn.textContent = loginEmail ? "Valider" : "Recevoir le lien";
 });
 document.getElementById("logout").addEventListener("click", () => sb.auth.signOut());
 

@@ -210,7 +210,6 @@ body.locked { overflow: hidden; }
 .login-card { width: min(380px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 14px; }
 .login-card label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); }
 .login-card input { font: 16px var(--body); padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--chalk); color: var(--ink); }
-.login-card input#login-code { font: 700 20px var(--mono); letter-spacing: .3em; }
 .login-card .primary { font: 700 15px var(--body); border: 0; border-radius: 999px; padding: 11px 16px; background: var(--accent); color: var(--surface); cursor: pointer; }
 .login-card .primary:disabled { opacity: .6; }
 #login-msg { min-height: 1.5em; }
@@ -224,10 +223,8 @@ body.locked { overflow: hidden; }
       <div class="avatar" aria-hidden="true">M</div>
       <div><div class="coach-name">Marcel</div><div class="eyebrow">Programme sportif</div></div>
     </div>
-    <p class="rules">Connecte-toi une fois : l'appli s'en souviendra sur ce téléphone.</p>
-    <label for="login-email">Ton e-mail<input id="login-email" type="email" autocomplete="email" required></label>
-    <div id="login-step2" hidden><label for="login-code">Code reçu par e-mail<input id="login-code" inputmode="numeric" autocomplete="one-time-code" maxlength="8"></label></div>
-    <button class="primary" id="login-btn" type="submit">Recevoir le lien</button>
+    <p class="rules">Un lien de connexion part sur ton e-mail. Une fois connecté, l'appli s'en souvient sur ce téléphone.</p>
+    <button class="primary" id="login-btn" type="submit">Connexion</button>
     <p class="rules" id="login-msg" role="status"></p>
   </form>
 </div>
