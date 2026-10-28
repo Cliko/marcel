@@ -213,6 +213,8 @@ body.locked { overflow: hidden; }
 .login-card .primary { font: 700 15px var(--body); border: 0; border-radius: 999px; padding: 11px 16px; background: var(--accent); color: var(--surface); cursor: pointer; }
 .login-card .primary:disabled { opacity: .6; }
 #login-msg { min-height: 1.5em; }
+.avatar { overflow: hidden; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.25) translateY(4%); }
 [hidden] { display: none !important; }
 </style>
 </head>
@@ -220,7 +222,7 @@ body.locked { overflow: hidden; }
 <div class="login" id="login" hidden>
   <form class="login-card" id="login-form">
     <div class="coach">
-      <div class="avatar" aria-hidden="true">M</div>
+      <div class="avatar" aria-hidden="true"><img src="icons/icon-192.png" alt=""></div>
       <div><div class="coach-name">Marcel</div><div class="eyebrow">Programme sportif</div></div>
     </div>
     <p class="rules">Un lien de connexion part sur ton e-mail. Une fois connecté, l'appli s'en souvient sur ce téléphone.</p>
@@ -245,7 +247,7 @@ body.locked { overflow: hidden; }
   <div class="inner">
     <header class="top">
       <div class="coach">
-        <div class="avatar" aria-hidden="true">M</div>
+        <div class="avatar" aria-hidden="true"><img src="icons/icon-192.png" alt=""></div>
         <div>
           <div class="coach-name">Marcel<small>ton coach sport et nutrition</small></div>
           <div class="bubble" id="marcel">Bonjour Ben !</div>

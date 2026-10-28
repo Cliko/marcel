@@ -1,5 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#1b232c"/>
-  <circle cx="256" cy="256" r="168" fill="#f4e6c8" stroke="#a8741a" stroke-width="20"/>
-  <path d="M168 340V176l88 104 88-104v164" fill="none" stroke="#a8741a" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Marcel : coach à l'ancienne, casquette, moustache en guidon, survêtement et sifflet -->
+  <rect width="512" height="512" rx="112" fill="#2f5d8a"/>
+  <circle cx="256" cy="256" r="200" fill="#3b6fa0"/>
+  <!-- survêtement -->
+  <path d="M96 512c8-92 72-140 160-140s152 48 160 140z" fill="#1b232c"/>
+  <path d="M206 378l50 60 50-60" fill="none" stroke="#f2f4f6" stroke-width="14" stroke-linejoin="round"/>
+  <path d="M120 470c20-40 50-62 86-74M392 470c-20-40-50-62-86-74" fill="none" stroke="#a8741a" stroke-width="10"/>
+  <!-- cou -->
+  <path d="M216 330h80v52c-12 14-68 14-80 0z" fill="#e0a882"/>
+  <!-- oreilles -->
+  <ellipse cx="160" cy="250" rx="22" ry="30" fill="#e0a882"/>
+  <ellipse cx="352" cy="250" rx="22" ry="30" fill="#e0a882"/>
+  <!-- visage -->
+  <ellipse cx="256" cy="250" rx="100" ry="112" fill="#f0bd95"/>
+  <!-- favoris gris -->
+  <path d="M158 200c-4 30-2 60 8 82l14-6c-6-24-6-50-2-74z" fill="#c9ccd1"/>
+  <path d="M354 200c4 30 2 60-8 82l-14-6c6-24 6-50 2-74z" fill="#c9ccd1"/>
+  <!-- casquette de coach avec « M » -->
+  <path d="M156 206c-4-64 40-104 100-104s104 40 100 104z" fill="#a8741a"/>
+  <path d="M150 204c60-14 152-14 212 0 24 6 40 14 40 22-60 8-200 6-252-6-10-4-10-14 0-16z" fill="#8a5f14"/>
+  <path d="M230 176v-44l26 28 26-28v44" fill="none" stroke="#f2f4f6" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- sourcils -->
+  <path d="M196 232c12-10 30-12 44-4M272 228c14-8 32-6 44 4" fill="none" stroke="#9aa0a8" stroke-width="10" stroke-linecap="round"/>
+  <!-- yeux -->
+  <circle cx="220" cy="254" r="9" fill="#1b232c"/>
+  <circle cx="292" cy="254" r="9" fill="#1b232c"/>
+  <!-- joues -->
+  <circle cx="196" cy="290" r="14" fill="#e89a86" opacity=".6"/>
+  <circle cx="316" cy="290" r="14" fill="#e89a86" opacity=".6"/>
+  <!-- nez -->
+  <path d="M256 258c-6 18-12 30-12 36 0 8 24 8 24 0 0-6-6-18-12-36z" fill="#e0a882"/>
+  <!-- moustache en guidon -->
+  <path d="M256 306c-20-14-48-16-68-2-12 8-22 2-26-8-2 22 14 40 38 38 22-2 40-14 56-20 16 6 34 18 56 20 24 2 40-16 38-38-4 10-14 16-26 8-20-14-48-12-68 2z" fill="#f2f4f6" stroke="#c9ccd1" stroke-width="3"/>
+  <!-- sourire -->
+  <path d="M232 334c14 10 34 10 48 0" fill="none" stroke="#a5523f" stroke-width="7" stroke-linecap="round"/>
+  <!-- cordon et sifflet -->
+  <path d="M206 384c10 40 30 66 50 76" fill="none" stroke="#f2f4f6" stroke-width="5"/>
+  <rect x="244" y="452" width="48" height="26" rx="13" fill="#c9ccd1" stroke="#1b232c" stroke-width="4"/>
+  <circle cx="258" cy="465" r="6" fill="#1b232c"/>
 </svg>
