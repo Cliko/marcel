@@ -1,7 +1,7 @@
 // Connexion (lien reçu par e-mail, compte unique) et sauvegarde de la progression dans Supabase, avec copie locale de secours.
 // Table public.progress : une ligne par semaine (week = WEEK), protégée par RLS (chacun ne voit que ses lignes).
 const KEY = "marcel-" + WEEK;
-const emptyFood = () => ({ daily: {}, water: {}, batch: {}, courses: {} });
+const emptyFood = () => ({ daily: {}, water: {}, batch: {}, courses: {}, pick: {} });
 let state = { lvl: "D", checks: {}, quests: {}, records: {}, food: emptyFood() };
 try { const raw = localStorage.getItem(KEY); if (raw) state = Object.assign(state, JSON.parse(raw)); state.food = Object.assign(emptyFood(), state.food || {}); } catch (e) {}
 

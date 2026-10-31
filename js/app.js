@@ -138,28 +138,44 @@ function renderFood() {
   const S = NUTRI.batch_cooking.sessions;
   document.getElementById("batch-sub").textContent = S.length + " sessions · " + S[0].parts + " parts";
   document.getElementById("batch-rule").textContent = NUTRI.batch_cooking.principe;
-  document.getElementById("batch").innerHTML = NUTRI.batch_cooking.sessions.map((s, k) => recipeCard(s, k, true)).join("");
-  // Le vendredi, la semaine prochaine arrive (data/prochaine.js) : ses recettes et ses courses passent devant
   const next = typeof NUTRI_NEXT !== "undefined" && NUTRI_NEXT ? NUTRI_NEXT : null;
-  document.getElementById("next-week").hidden = !next;
-  if (next) {
-    document.getElementById("next-sub").textContent = next.dates || "";
-    document.getElementById("next-batch").innerHTML = next.batch_cooking.sessions.map((s, k) => recipeCard(s, k, false)).join("");
+  const curPick = pickedBatch(NUTRI, "");
+  document.getElementById("batch").innerHTML = S.map((s, k) => recipeCard(s, k, true, curPick.includes(k))).join("");
+  // Le vendredi, la semaine prochaine arrive (data/prochaine.js) : ses recettes et ses courses passent devant
+  const nw = document.getElementById("next-week");
+  if (nw) {
+    nw.hidden = !next;
+    if (next) {
+      const np = pickedBatch(next, "n");
+      document.getElementById("next-sub").textContent = next.dates || "";
+      document.getElementById("next-batch").innerHTML = next.batch_cooking.sessions.map((s, k) => recipeCard(s, k, false, np.includes(k))).join("");
+    }
   }
-  const N = next || NUTRI, ck = k => (next ? "n" : "") + k;
-  document.getElementById("courses-title").textContent = next ? "Courses du week-end" : "Courses";
-  const C = N.batch_cooking.liste_courses, got = C.filter((_, k) => state.food.courses[ck(k)]).length;
-  document.getElementById("courses-count").textContent = got + "/" + C.length;
-  const B = N.budget;
-  document.getElementById("budget").innerHTML = B ? `<div class="budget-row"><span>Recettes ${next ? "de la semaine prochaine" : "de la semaine"}</span><b>≈ ${eur(B.recettes_semaine_eur)}</b></div>
-    <div class="budget-row"><span>Courses totales</span><b>≈ ${eur(B.courses_totales_eur)}</b></div><p class="rules">${B.note} ${B.principe}.</p>` : "";
-  document.getElementById("courses").innerHTML = C.map((x, k) =>
-    `<li class="${state.food.courses[ck(k)] ? "done" : ""}"><input type="checkbox" id="s-${ck(k)}" data-course="${ck(k)}" ${state.food.courses[ck(k)] ? "checked" : ""}><label for="s-${ck(k)}">${x}</label></li>`).join("");
+  // Courses : uniquement les recettes choisies, groupées par recette pour étaler les achats
+  const N = next || NUTRI, pre = next ? "n" : "", R = N.batch_cooking.sessions, chosen = pickedBatch(N, pre);
+  const ct = document.getElementById("courses-title"); if (ct) ct.textContent = next ? "Courses de la semaine prochaine" : "Courses";
+  document.getElementById("pick").innerHTML = R.map((s, k) =>
+    `<button type="button" id="p-${pre}${k}" data-pick="${pre}${k}" aria-pressed="${chosen.includes(k)}"><b>${s.recette}</b><i>${s.jour} · ≈ ${eur(s.prix_total_eur)}</i></button>`).join("");
+  let all = 0, got = 0, spent = 0, total = 0;
+  const groups = chosen.map(k => {
+    const s = R[k], L = s.courses || s.ingredients.map(x => ({ item: x }));
+    const sub = s.prix_total_eur || L.reduce((t, c) => t + (c.prix_eur || 0), 0); total += sub;
+    const items = L.map((c, i) => {
+      const key = pre + k + "-" + i, on = !!state.food.courses[key]; all++; if (on) { got++; spent += c.prix_eur || 0; }
+      return `<li class="${on ? "done" : ""}"><input type="checkbox" id="s-${key}" data-course="${key}" ${on ? "checked" : ""}><label for="s-${key}">${c.item}</label>${c.prix_eur ? `<span class="c-price">${eur(c.prix_eur)}</span>` : ""}</li>`;
+    }).join("");
+    return `<div class="c-group"><div class="c-head"><span>${s.recette}</span><b>≈ ${eur(sub)}</b></div><span class="ex-tip">Cuisine prévue : ${s.jour}</span><ul class="checklist courses">${items}</ul></div>`;
+  });
+  document.getElementById("courses").innerHTML = groups.length ? groups.join("") : `<p class="rules">Choisis au moins une recette au-dessus.</p>`;
+  document.getElementById("courses-count").textContent = got + "/" + all;
+  document.getElementById("budget").innerHTML = `<div class="budget-row"><span>Recettes choisies (${chosen.length}/${R.length})</span><b>≈ ${eur(total)}</b></div>
+    <div class="budget-row"><span>Déjà acheté</span><b>≈ ${eur(spent)}</b></div><div class="budget-row"><span>Reste à acheter</span><b>≈ ${eur(Math.max(0, total - spent))}</b></div>
+    ${N.budget ? `<p class="rules">${N.budget.note} ${N.budget.principe}.</p>` : ""}`;
 }
-function recipeCard(s, k, withCheck) {
+function recipeCard(s, k, withCheck, picked) {
     const on = withCheck && !!state.food.batch[k];
-    return `<details class="recipe${on ? " done" : ""}">
-      <summary><span class="day-date">${s.jour}</span><span class="r-name">${s.recette}</span>
+    return `<details class="recipe${on ? " done" : ""}${picked ? "" : " off"}">
+      <summary><span class="day-date">${s.jour}${picked ? "" : " · pas choisie"}</span><span class="r-name">${s.recette}</span>
         <span class="r-meta">${s.parts} parts · ${s.kcal_part} kcal · ${s.proteines_part_g} g prot. · ${s.temps}</span>${s.prix_part_eur ? `<span class="r-price">≈ ${eur(s.prix_part_eur)} la part · ${eur(s.prix_total_eur)} la recette</span>` : ""}</summary>
       <div class="r-body">
         <div><div class="eyebrow">Ingrédients</div><ul>${s.ingredients.map(x => `<li>${x}</li>`).join("")}</ul></div>
@@ -220,6 +236,8 @@ document.getElementById("view-quests").addEventListener("change", e => {
 document.getElementById("view-food").addEventListener("click", e => {
   const pick = e.target.closest("[data-day]");
   if (pick) { focusId = pick.dataset.day; renderFood(); renderDays(); renderMarcel(); document.getElementById("fpick-" + focusId)?.focus(); return; }
+  const pk = e.target.closest("[data-pick]");
+  if (pk) { const key = pk.dataset.pick; state.food.pick[key] = state.food.pick[key] === false; afterFood(); document.getElementById("p-" + key)?.focus(); return; }
   const m = e.target.closest("[data-meal]");
   if (m) { const key = focusId + "-" + m.dataset.meal; state.food.daily[key] = state.food.daily[key] === m.dataset.opt ? null : m.dataset.opt; const sel = "#" + m.id; afterFood(); document.querySelector(sel)?.focus(); return; }
   const w = e.target.closest("[data-water]");

@@ -118,7 +118,20 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .r-body ul, .r-body ol { margin: 4px 0 0; padding-left: 20px; }
 .r-actions { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
 .r-check { display: inline-flex; gap: 8px; align-items: center; font-weight: 700; }
-.courses li { grid-template-columns: 30px 1fr; padding: 7px 0; font-size: 14px; }
+.courses li { grid-template-columns: 30px 1fr auto; padding: 7px 0; font-size: 14px; }
+.c-price { font-family: var(--mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.c-group { display: flex; flex-direction: column; gap: 2px; }
+.c-group + .c-group { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 6px; }
+.c-head { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; font-size: 15px; }
+.c-head b { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pick { display: flex; flex-direction: column; gap: 6px; }
+.pick button { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 44px; padding: 9px 12px 9px 42px; text-align: left; font: inherit; color: inherit; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.pick button::before { content: ""; position: absolute; left: 12px; top: 50%; width: 18px; height: 18px; margin-top: -11px; border: 2px solid var(--muted); border-radius: 4px; }
+.pick button[aria-pressed="true"] { border-color: var(--done); }
+.pick button[aria-pressed="true"]::before { content: "✓"; background: var(--done); border-color: var(--done); color: var(--surface); font-size: 13px; line-height: 18px; text-align: center; font-weight: 700; }
+.pick b { font-size: 14px; }
+.pick i { font-style: normal; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.recipe.off { opacity: .6; }
 .r-price { font-family: var(--mono); font-size: 12px; color: var(--done); font-weight: 700; }
 .budget { background: var(--chalk); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
 .budget-row { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
@@ -334,13 +347,15 @@ body.locked { overflow: hidden; }
         <div class="panel next" id="next-week" hidden>
           <div class="eyebrow">Nouveau · semaine prochaine</div>
           <div class="subhead"><h2>Recettes à venir</h2><span class="eyebrow" id="next-sub"></span></div>
-          <p class="rules">Fais les courses ce week-end avec la liste ci-dessous. Ces recettes remplaceront celles du dessus dimanche soir.</p>
+          <p class="rules">Choisis tes recettes dans les courses ci-dessous et achète-les au fil de la semaine. Elles remplaceront celles du dessus dimanche soir.</p>
           <div class="stack" id="next-batch"></div>
         </div>
         <div class="panel">
           <div class="subhead"><h2 id="courses-title">Courses</h2><span class="count" id="courses-count">0/0</span></div>
+          <p class="rules">Cette semaine, je cuisine :</p>
+          <div class="pick" id="pick" role="group" aria-label="Recettes choisies"></div>
           <div class="budget" id="budget"></div>
-          <ul class="checklist courses" id="courses"></ul>
+          <div class="stack" id="courses"></div>
         </div>
       </div>
     </section>
