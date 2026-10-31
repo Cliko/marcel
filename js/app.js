@@ -238,38 +238,18 @@ document.getElementById("view-food").addEventListener("change", e => {
 });
 function afterFood() { save(); renderFood(); renderProgress(); notifyNew(); }
 
-// Guide Refectory : 5 critères pour juger un plat avant de commander (rien n'est enregistré)
-const REFECT = [
-  ["Une protéine maigre", "poulet, poisson, œufs, lentilles, pois chiches, tofu"],
-  ["Des légumes sur au moins la moitié du plat", "crus ou cuits, hors pommes de terre"],
-  ["Un féculent complet ou une petite portion", "riz complet, quinoa, boulgour, patate douce"],
-  ["Une cuisson simple", "grillé, vapeur, four, mijoté ; ni frit ni pané"],
-  ["Une sauce légère", "tomate, yaourt, citron, curry léger ; pas de crème ni de fromage fondu"],
-];
-const refectOn = new Set();
-function renderRefectory() {
-  document.getElementById("refect-list").innerHTML = REFECT.map(([t, d], k) =>
-    `<li class="${refectOn.has(k) ? "done" : ""}"><input type="checkbox" id="r-${k}" data-refect="${k}" ${refectOn.has(k) ? "checked" : ""}><label for="r-${k}"><span class="ex-name">${t}</span><span class="ex-tip">${d}</span></label></li>`).join("");
-  const n = refectOn.size, v = document.getElementById("refect-verdict");
-  v.className = "verdict" + (n >= 4 ? " ok" : n === 3 ? " mid" : "");
-  v.textContent = n === 0 ? "Coche les critères du plat qui te tente." : n === 5 ? "5/5 : parfait, commande-le." : n === 4 ? "4/5 : bon choix." : n === 3 ? "3/5 : correct, mais regarde s'il y a mieux." : n + "/5 : cherche un autre plat.";
-}
-document.getElementById("refectory").addEventListener("change", e => {
-  const k = e.target.dataset.refect; if (k === undefined) return;
-  e.target.checked ? refectOn.add(+k) : refectOn.delete(+k);
-  renderRefectory(); document.getElementById("r-" + k)?.focus();
-});
-renderRefectory();
 // Choix de Marcel pour la semaine (data/refectory.js, rempli le dimanche)
 function renderRefectPicks() {
   const box = document.getElementById("refect-picks");
   const P = typeof REFECT_PICKS !== "undefined" ? REFECT_PICKS : null;
-  if (!P || !P.jours || !P.jours.length) { box.hidden = true; return; }
+  const panel = document.getElementById("refectory");
+  if (!P || !P.jours || !P.jours.length) { panel.hidden = true; return; }
+  panel.hidden = false;
   const h = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const today = new Date().toLocaleDateString("sv-SE");
   const label = d => new Date(d + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
   const info = c => [c.kcal ? c.kcal + " kcal" : "", c.proteines ? c.proteines + " g de protéines" : "", c.prix ? c.prix.toFixed(2).replace(".", ",") + " €" : ""].filter(Boolean).join(" · ");
-  box.innerHTML = `<p class="rules"><strong>Les choix de Marcel cette semaine</strong>, d'après le menu de ton compte.</p><ul class="picks">` +
+  box.innerHTML = `<p class="rules">D'après le menu de ton compte, mis à jour le dimanche.</p><ul class="picks">` +
     P.jours.map(j => `<li class="${j.date === today ? "today" : ""}"><span class="pick-day">${label(j.date)}${j.note ? " · " + h(j.note) : ""}${j.date === today ? " · aujourd'hui" : ""}</span>` +
       j.choix.map((c, k) => `<span class="pick">${k + 1}. <b>${h(c.nom)}</b><span class="ex-tip">${h([info(c), c.pourquoi].filter(Boolean).join(" · "))}</span></span>`).join("") + `</li>`).join("") + `</ul>`;
   box.hidden = false;
