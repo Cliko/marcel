@@ -124,6 +124,12 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .budget-row { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
 .budget-row b { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .panel.next { border-color: var(--gold); }
+.refect .checklist li.done label { text-decoration: none; color: inherit; }
+.verdict { border-radius: 8px; padding: 10px 12px; font-weight: 700; background: var(--chalk); border: 1px solid var(--line); }
+.verdict.ok { background: var(--done-soft); color: var(--done); border-color: transparent; }
+.verdict.mid { background: var(--gold-soft); color: var(--gold); border-color: transparent; }
+.kw { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.kw p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
 .subhead { display: flex; justify-content: space-between; align-items: baseline; }
 .count { font-family: var(--mono); font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--chalk); border: 1px solid var(--line); color: var(--muted); }
 .count.hot { background: var(--gold-soft); color: var(--gold); border-color: transparent; }
@@ -310,6 +316,15 @@ body.locked { overflow: hidden; }
         <div class="panel rule"><div class="plate" aria-hidden="true"></div><p><strong>La règle de l'assiette.</strong> <span id="plate-rule"></span></p></div>
         <div class="daypick" id="food-pick" role="group" aria-label="Choisir le jour"></div>
         <div class="panel" id="food-day"></div>
+        <div class="panel refect" id="refectory">
+          <div class="subhead"><h2>Commander sur Refectory</h2><span class="eyebrow">avant de valider</span></div>
+          <p class="rules">Coche ce que le plat respecte. Tu sais tout de suite si c'est un bon choix.</p>
+          <ul class="checklist" id="refect-list"></ul>
+          <div class="verdict" id="refect-verdict" aria-live="polite"></div>
+          <div class="kw"><div><span class="eyebrow">À privilégier</span><p>bowl, poké, salade complète, grillé, rôti, vapeur, au four, curry léger, chili, poisson, poulet, lentilles, pois chiches</p></div>
+          <div><span class="eyebrow">À limiter</span><p>pané, frit, burger, carbonara, gratin, crème, fromage fondu, lasagnes, pizza, sauce à part en double</p></div></div>
+          <p class="rules">Hésitation entre deux plats ? Envoie une capture du menu à Marcel dans la discussion, il te dit lequel prendre.</p>
+        </div>
         <div class="subhead"><h2>Batch cooking</h2><span class="eyebrow" id="batch-sub"></span></div>
         <p class="rules" id="batch-rule"></p>
         <div class="stack" id="batch"></div>

@@ -228,6 +228,29 @@ document.getElementById("view-food").addEventListener("change", e => {
   document.getElementById(el.id)?.focus();
 });
 function afterFood() { save(); renderFood(); renderProgress(); notifyNew(); }
+
+// Guide Refectory : 5 critères pour juger un plat avant de commander (rien n'est enregistré)
+const REFECT = [
+  ["Une protéine maigre", "poulet, poisson, œufs, lentilles, pois chiches, tofu"],
+  ["Des légumes sur au moins la moitié du plat", "crus ou cuits, hors pommes de terre"],
+  ["Un féculent complet ou une petite portion", "riz complet, quinoa, boulgour, patate douce"],
+  ["Une cuisson simple", "grillé, vapeur, four, mijoté ; ni frit ni pané"],
+  ["Une sauce légère", "tomate, yaourt, citron, curry léger ; pas de crème ni de fromage fondu"],
+];
+const refectOn = new Set();
+function renderRefectory() {
+  document.getElementById("refect-list").innerHTML = REFECT.map(([t, d], k) =>
+    `<li class="${refectOn.has(k) ? "done" : ""}"><input type="checkbox" id="r-${k}" data-refect="${k}" ${refectOn.has(k) ? "checked" : ""}><label for="r-${k}"><span class="ex-name">${t}</span><span class="ex-tip">${d}</span></label></li>`).join("");
+  const n = refectOn.size, v = document.getElementById("refect-verdict");
+  v.className = "verdict" + (n >= 4 ? " ok" : n === 3 ? " mid" : "");
+  v.textContent = n === 0 ? "Coche les critères du plat qui te tente." : n === 5 ? "5/5 : parfait, commande-le." : n === 4 ? "4/5 : bon choix." : n === 3 ? "3/5 : correct, mais regarde s'il y a mieux." : n + "/5 : cherche un autre plat.";
+}
+document.getElementById("refectory").addEventListener("change", e => {
+  const k = e.target.dataset.refect; if (k === undefined) return;
+  e.target.checked ? refectOn.add(+k) : refectOn.delete(+k);
+  renderRefectory(); document.getElementById("r-" + k)?.focus();
+});
+renderRefectory();
 const resetBtn = document.getElementById("reset");
 let armed = false;
 resetBtn.addEventListener("click", () => {
