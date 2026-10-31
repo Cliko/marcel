@@ -125,6 +125,11 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .budget-row b { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .panel.next { border-color: var(--gold); }
 .refect .checklist li.done label { text-decoration: none; color: inherit; }
+.checklist li.meal { grid-template-columns: 1fr; gap: 6px; }
+.meal-head { display: flex; justify-content: space-between; align-items: baseline; }
+.meal-seg { border-radius: 10px; flex-wrap: wrap; }
+.meal-seg button { flex: 1 1 auto; border-radius: 8px; }
+.meal-seg button.out[aria-pressed="true"] { background: var(--gold); }
 .verdict { border-radius: 8px; padding: 10px 12px; font-weight: 700; background: var(--chalk); border: 1px solid var(--line); }
 .verdict.ok { background: var(--done-soft); color: var(--done); border-color: transparent; }
 .verdict.mid { background: var(--gold-soft); color: var(--gold); border-color: transparent; }

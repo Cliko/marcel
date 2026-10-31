@@ -93,7 +93,7 @@ function notifyNew() {
       const [type, id] = k.split(":");
       if (type === "q") { const q = QUESTS.find(x => x.id === id); toast("Quête accomplie", `${q.title} · +${q.xp} XP`, "★"); }
       if (type === "t") { const t = TIERS.find(x => x.name === id); toast(`Palier ${t.name} atteint`, `Récompense débloquée : ${t.reward}`, t.name[0]); }
-      if (type === "f") { const d = DAYS.find(x => x.id === id); toast("Journée nutrition validée", `${d.date} · +${FOOD_DAY_XP} XP`, "✓"); }
+      if (type === "f") { const d = DAYS.find(x => x.id === id); toast("Journée nutrition notée", `${d.date} · +${foodDayXp(d.id)} XP`, "✓"); }
       if (type === "d") { const d = DAYS.find(x => x.id === id); toast("Séance validée", `${d.title} · +${d.bonus} XP`, "✓"); }
     });
   }
@@ -124,6 +124,13 @@ function renderFood() {
         return `<li class="water${n >= f.max ? " done" : ""}"><div><span class="ex-name">${f.label}</span><span class="ex-tip">${sport ? f.bonus + " (jour " + (d.id === "mer" ? "vélo" : "piscine") + ")" : f.bonus}</span></div>
           <div class="glasses" role="group" aria-label="Verres d'eau bus">${Array.from({ length: f.max }, (_, k) =>
             `<button type="button" class="glass${k < n ? " full" : ""}" data-water="${k + 1}" aria-label="${k + 1} verre${k ? "s" : ""}"></button>`).join("")}<span class="num">${n}/${f.max}</span></div></li>`;
+      }
+      if (f.type === "repas") {
+        const c = mealChoice(d.id, f);
+        return `<li class="meal"><div class="meal-head"><span class="ex-name">${f.label}</span><span class="q-xp">${c ? (c.sain === false ? "0 XP" : "+" + f.xp) : "+" + f.xp}</span></div>
+          <div class="seg meal-seg" role="group" aria-label="${f.label}">${f.options.map(o =>
+            `<button type="button" id="m-${d.id}-${f.id}-${o.id}" data-meal="${f.id}" data-opt="${o.id}" aria-pressed="${c && c.id === o.id}" class="${o.sain === false ? "out" : ""}">${o.label}</button>`).join("")}</div>
+          ${c && c.sain === false ? `<span class="ex-tip">Pas grave : reprends au repas suivant.</span>` : ""}</li>`;
       }
       const id = d.id + "-" + f.id, on = !!state.food.daily[id];
       return `<li class="${on ? "done" : ""}"><input type="checkbox" id="f-${id}" data-food="${id}" ${on ? "checked" : ""}><label for="f-${id}" class="ex-name">${f.label}</label><span class="q-xp">+${f.xp}</span></li>`;
@@ -213,6 +220,8 @@ document.getElementById("view-quests").addEventListener("change", e => {
 document.getElementById("view-food").addEventListener("click", e => {
   const pick = e.target.closest("[data-day]");
   if (pick) { focusId = pick.dataset.day; renderFood(); renderDays(); renderMarcel(); document.getElementById("fpick-" + focusId)?.focus(); return; }
+  const m = e.target.closest("[data-meal]");
+  if (m) { const key = focusId + "-" + m.dataset.meal; state.food.daily[key] = state.food.daily[key] === m.dataset.opt ? null : m.dataset.opt; const sel = "#" + m.id; afterFood(); document.querySelector(sel)?.focus(); return; }
   const w = e.target.closest("[data-water]");
   if (w) { const n = +w.dataset.water, cur = state.food.water[focusId] || 0; state.food.water[focusId] = cur === n ? n - 1 : n; afterFood(); document.querySelector(`[data-water="${n}"]`)?.focus(); }
 });
