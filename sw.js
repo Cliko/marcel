@@ -1,5 +1,5 @@
 // Réseau d'abord, en revalidant le cache HTTP (pour toujours avoir la dernière version), cache en secours hors ligne.
-const CACHE = "marcel-v5";
+const CACHE = "marcel-v6";
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", e => e.waitUntil(self.clients.claim()));
 self.addEventListener("fetch", e => {

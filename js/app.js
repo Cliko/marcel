@@ -156,16 +156,28 @@ function renderFood() {
   const ct = document.getElementById("courses-title"); if (ct) ct.textContent = next ? "Courses de la semaine prochaine" : "Courses";
   document.getElementById("pick").innerHTML = R.map((s, k) =>
     `<button type="button" id="p-${pre}${k}" data-pick="${pre}${k}" aria-pressed="${chosen.includes(k)}"><b>${s.recette}</b><i>${s.jour} · ≈ ${eur(s.prix_total_eur)}</i></button>`).join("");
+  // Ingrédients des recettes choisies additionnés (un doublon = une seule ligne), rangés par rayon
   let all = 0, got = 0, spent = 0, total = 0;
-  const groups = chosen.map(k => {
-    const s = R[k], L = s.courses || s.ingredients.map(x => ({ item: x }));
-    const sub = s.prix_total_eur || L.reduce((t, c) => t + (c.prix_eur || 0), 0); total += sub;
-    const items = L.map((c, i) => {
-      const key = pre + k + "-" + i, on = !!state.food.courses[key]; all++; if (on) { got++; spent += c.prix_eur || 0; }
-      return `<li class="${on ? "done" : ""}"><input type="checkbox" id="s-${key}" data-course="${key}" ${on ? "checked" : ""}><label for="s-${key}">${c.item}</label>${c.prix_eur ? `<span class="c-price">${eur(c.prix_eur)}</span>` : ""}</li>`;
-    }).join("");
-    return `<div class="c-group"><div class="c-head"><span>${s.recette}</span><b>≈ ${eur(sub)}</b></div><span class="ex-tip">Cuisine prévue : ${s.jour}</span><ul class="checklist courses">${items}</ul></div>`;
+  const merged = {}, short = r => r.split(/,| à | aux /)[0];
+  chosen.forEach(k => {
+    const s = R[k]; total += s.prix_total_eur || 0;
+    (s.courses || s.ingredients.map(x => ({ produit: x }))).forEach(c => {
+      const name = c.produit || c.item, id = (name + "|" + (c.unite || "")).toLowerCase();
+      const m = merged[id] || (merged[id] = { name, unite: c.unite || "", qte: 0, noQ: true, prix: 0, rayon: c.rayon || "Autres", from: [],
+        key: pre + "c-" + id.normalize("NFD").replace(/[^a-z0-9]+/g, "-") });
+      if (c.qte != null) { m.qte += c.qte; m.noQ = false; }
+      m.prix += c.prix_eur || 0; m.from.push(short(s.recette));
+    });
   });
+  const qty = m => m.noQ ? "" : !m.unite ? "× " + m.qte : m.unite === "g" && m.qte >= 1000 ? (m.qte / 1000).toLocaleString("fr-FR") + " kg"
+    : m.qte + " " + m.unite + (m.qte > 1 && !["g", "ml"].includes(m.unite) ? "s" : "");
+  const RAYONS = ["Fruits et légumes", "Viande et frais", "Surgelés", "Épicerie"];
+  const byRayon = {}; Object.values(merged).forEach(m => (byRayon[m.rayon] = byRayon[m.rayon] || []).push(m));
+  const groups = Object.keys(byRayon).sort((a, b) => (RAYONS.indexOf(a) + 99) % 99 - (RAYONS.indexOf(b) + 99) % 99).map(r =>
+    `<div class="c-group"><div class="eyebrow">${r}</div><ul class="checklist courses">${byRayon[r].map(m => {
+      const on = !!state.food.courses[m.key]; all++; if (on) { got++; spent += m.prix; }
+      return `<li class="${on ? "done" : ""}"><input type="checkbox" id="s-${m.key}" data-course="${m.key}" ${on ? "checked" : ""}><label for="s-${m.key}">${m.name}${qty(m) ? ` <b class="c-qty">${qty(m)}</b>` : ""}${m.from.length > 1 ? `<span class="ex-tip">${m.from.join(" + ")}</span>` : ""}</label>${m.prix ? `<span class="c-price">${eur(m.prix)}</span>` : ""}</li>`;
+    }).join("")}</ul></div>`);
   document.getElementById("courses").innerHTML = groups.length ? groups.join("") : `<p class="rules">Choisis au moins une recette au-dessus.</p>`;
   document.getElementById("courses-count").textContent = got + "/" + all;
   document.getElementById("budget").innerHTML = `<div class="budget-row"><span>Recettes choisies (${chosen.length}/${R.length})</span><b>≈ ${eur(total)}</b></div>
