@@ -123,6 +123,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .budget { background: var(--chalk); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
 .budget-row { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
 .budget-row b { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.panel.next { border-color: var(--gold); }
 .subhead { display: flex; justify-content: space-between; align-items: baseline; }
 .count { font-family: var(--mono); font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--chalk); border: 1px solid var(--line); color: var(--muted); }
 .count.hot { background: var(--gold-soft); color: var(--gold); border-color: transparent; }
@@ -312,8 +313,14 @@ body.locked { overflow: hidden; }
         <div class="subhead"><h2>Batch cooking</h2><span class="eyebrow" id="batch-sub"></span></div>
         <p class="rules" id="batch-rule"></p>
         <div class="stack" id="batch"></div>
+        <div class="panel next" id="next-week" hidden>
+          <div class="eyebrow">Nouveau · semaine prochaine</div>
+          <div class="subhead"><h2>Recettes à venir</h2><span class="eyebrow" id="next-sub"></span></div>
+          <p class="rules">Fais les courses ce week-end avec la liste ci-dessous. Ces recettes remplaceront celles du dessus dimanche soir.</p>
+          <div class="stack" id="next-batch"></div>
+        </div>
         <div class="panel">
-          <div class="subhead"><h2>Courses</h2><span class="count" id="courses-count">0/0</span></div>
+          <div class="subhead"><h2 id="courses-title">Courses</h2><span class="count" id="courses-count">0/0</span></div>
           <div class="budget" id="budget"></div>
           <ul class="checklist courses" id="courses"></ul>
         </div>
@@ -333,6 +340,7 @@ body.locked { overflow: hidden; }
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="js/config.js"></script>
 <script src="data/semaine.js"></script>
+<script src="data/prochaine.js"></script>
 <script src="js/stockage.js"></script>
 <script src="js/app.js"></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});</script>

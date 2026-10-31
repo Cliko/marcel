@@ -131,25 +131,35 @@ function renderFood() {
   const S = NUTRI.batch_cooking.sessions;
   document.getElementById("batch-sub").textContent = S.length + " sessions · " + S[0].parts + " parts";
   document.getElementById("batch-rule").textContent = NUTRI.batch_cooking.principe;
-  document.getElementById("batch").innerHTML = NUTRI.batch_cooking.sessions.map((s, k) => {
-    const on = !!state.food.batch[k];
-    return `<details class="recipe${on ? " done" : ""}"${k === 0 ? " open" : ""}>
+  document.getElementById("batch").innerHTML = NUTRI.batch_cooking.sessions.map((s, k) => recipeCard(s, k, true)).join("");
+  // Le vendredi, la semaine prochaine arrive (data/prochaine.js) : ses recettes et ses courses passent devant
+  const next = typeof NUTRI_NEXT !== "undefined" && NUTRI_NEXT ? NUTRI_NEXT : null;
+  document.getElementById("next-week").hidden = !next;
+  if (next) {
+    document.getElementById("next-sub").textContent = next.dates || "";
+    document.getElementById("next-batch").innerHTML = next.batch_cooking.sessions.map((s, k) => recipeCard(s, k, false)).join("");
+  }
+  const N = next || NUTRI, ck = k => (next ? "n" : "") + k;
+  document.getElementById("courses-title").textContent = next ? "Courses du week-end" : "Courses";
+  const C = N.batch_cooking.liste_courses, got = C.filter((_, k) => state.food.courses[ck(k)]).length;
+  document.getElementById("courses-count").textContent = got + "/" + C.length;
+  const B = N.budget;
+  document.getElementById("budget").innerHTML = B ? `<div class="budget-row"><span>Recettes ${next ? "de la semaine prochaine" : "de la semaine"}</span><b>≈ ${eur(B.recettes_semaine_eur)}</b></div>
+    <div class="budget-row"><span>Courses totales</span><b>≈ ${eur(B.courses_totales_eur)}</b></div><p class="rules">${B.note} ${B.principe}.</p>` : "";
+  document.getElementById("courses").innerHTML = C.map((x, k) =>
+    `<li class="${state.food.courses[ck(k)] ? "done" : ""}"><input type="checkbox" id="s-${ck(k)}" data-course="${ck(k)}" ${state.food.courses[ck(k)] ? "checked" : ""}><label for="s-${ck(k)}">${x}</label></li>`).join("");
+}
+function recipeCard(s, k, withCheck) {
+    const on = withCheck && !!state.food.batch[k];
+    return `<details class="recipe${on ? " done" : ""}"${k === 0 && withCheck ? " open" : ""}>
       <summary><span class="day-date">${s.jour}</span><span class="r-name">${s.recette}</span>
         <span class="r-meta">${s.parts} parts · ${s.kcal_part} kcal · ${s.proteines_part_g} g prot. · ${s.temps}</span>${s.prix_part_eur ? `<span class="r-price">≈ ${eur(s.prix_part_eur)} la part · ${eur(s.prix_total_eur)} la recette</span>` : ""}</summary>
       <div class="r-body">
         <div><div class="eyebrow">Ingrédients</div><ul>${s.ingredients.map(x => `<li>${x}</li>`).join("")}</ul></div>
         <div><div class="eyebrow">Étapes</div><ol>${s.etapes.map(x => `<li>${x}</li>`).join("")}</ol></div>
         <div class="r-actions"><a class="ex-link" href="${s.image}" target="_blank" rel="noopener">Voir des photos ↗</a>
-          <label class="r-check"><input type="checkbox" id="b-${k}" data-batch="${k}" ${on ? "checked" : ""}> Batch fait</label></div>
+          ${withCheck ? `<label class="r-check"><input type="checkbox" id="b-${k}" data-batch="${k}" ${on ? "checked" : ""}> Batch fait</label>` : ""}</div>
       </div></details>`;
-  }).join("");
-  const C = NUTRI.batch_cooking.liste_courses, got = C.filter((_, k) => state.food.courses[k]).length;
-  document.getElementById("courses-count").textContent = got + "/" + C.length;
-  const B = NUTRI.budget;
-  document.getElementById("budget").innerHTML = B ? `<div class="budget-row"><span>Recettes de la semaine</span><b>≈ ${eur(B.recettes_semaine_eur)}</b></div>
-    <div class="budget-row"><span>Courses totales</span><b>≈ ${eur(B.courses_totales_eur)}</b></div><p class="rules">${B.note} ${B.principe}.</p>` : "";
-  document.getElementById("courses").innerHTML = C.map((x, k) =>
-    `<li class="${state.food.courses[k] ? "done" : ""}"><input type="checkbox" id="s-${k}" data-course="${k}" ${state.food.courses[k] ? "checked" : ""}><label for="s-${k}">${x}</label></li>`).join("");
 }
 function renderLevel() { document.querySelectorAll(".level button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lvl === state.lvl))); }
 function renderTab() {
