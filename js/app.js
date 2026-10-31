@@ -251,6 +251,21 @@ document.getElementById("refectory").addEventListener("change", e => {
   renderRefectory(); document.getElementById("r-" + k)?.focus();
 });
 renderRefectory();
+// Choix de Marcel pour la semaine (data/refectory.js, rempli le dimanche)
+function renderRefectPicks() {
+  const box = document.getElementById("refect-picks");
+  const P = typeof REFECT_PICKS !== "undefined" ? REFECT_PICKS : null;
+  if (!P || !P.jours || !P.jours.length) { box.hidden = true; return; }
+  const h = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const today = new Date().toLocaleDateString("sv-SE");
+  const label = d => new Date(d + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  const info = c => [c.kcal ? c.kcal + " kcal" : "", c.proteines ? c.proteines + " g de protéines" : "", c.prix ? c.prix.toFixed(2).replace(".", ",") + " €" : ""].filter(Boolean).join(" · ");
+  box.innerHTML = `<p class="rules"><strong>Les choix de Marcel cette semaine</strong>, d'après le menu de ton compte.</p><ul class="picks">` +
+    P.jours.map(j => `<li class="${j.date === today ? "today" : ""}"><span class="pick-day">${label(j.date)}${j.note ? " · " + h(j.note) : ""}${j.date === today ? " · aujourd'hui" : ""}</span>` +
+      j.choix.map((c, k) => `<span class="pick">${k + 1}. <b>${h(c.nom)}</b><span class="ex-tip">${h([info(c), c.pourquoi].filter(Boolean).join(" · "))}</span></span>`).join("") + `</li>`).join("") + `</ul>`;
+  box.hidden = false;
+}
+renderRefectPicks();
 const resetBtn = document.getElementById("reset");
 let armed = false;
 resetBtn.addEventListener("click", () => {

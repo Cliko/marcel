@@ -128,6 +128,12 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .verdict { border-radius: 8px; padding: 10px 12px; font-weight: 700; background: var(--chalk); border: 1px solid var(--line); }
 .verdict.ok { background: var(--done-soft); color: var(--done); border-color: transparent; }
 .verdict.mid { background: var(--gold-soft); color: var(--gold); border-color: transparent; }
+.picks { list-style: none; margin: 0 0 6px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.picks li { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.picks li.today { border-color: var(--done); background: var(--done-soft); }
+.picks .pick-day { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.picks .pick { display: block; margin-top: 4px; }
+.picks .pick b { font-weight: 700; }
 .kw { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .kw p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
 .subhead { display: flex; justify-content: space-between; align-items: baseline; }
@@ -318,6 +324,7 @@ body.locked { overflow: hidden; }
         <div class="panel" id="food-day"></div>
         <div class="panel refect" id="refectory">
           <div class="subhead"><h2>Commander sur Refectory</h2><span class="eyebrow">avant de valider</span></div>
+          <div id="refect-picks" hidden></div>
           <p class="rules">Coche ce que le plat respecte. Tu sais tout de suite si c'est un bon choix.</p>
           <ul class="checklist" id="refect-list"></ul>
           <div class="verdict" id="refect-verdict" aria-live="polite"></div>
@@ -356,6 +363,7 @@ body.locked { overflow: hidden; }
 <script src="js/config.js"></script>
 <script src="data/semaine.js"></script>
 <script src="data/prochaine.js"></script>
+<script src="data/refectory.js"></script>
 <script src="js/stockage.js"></script>
 <script src="js/app.js"></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});</script>
