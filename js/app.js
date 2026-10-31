@@ -158,7 +158,7 @@ function renderFood() {
 }
 function recipeCard(s, k, withCheck) {
     const on = withCheck && !!state.food.batch[k];
-    return `<details class="recipe${on ? " done" : ""}"${k === 0 && withCheck ? " open" : ""}>
+    return `<details class="recipe${on ? " done" : ""}">
       <summary><span class="day-date">${s.jour}</span><span class="r-name">${s.recette}</span>
         <span class="r-meta">${s.parts} parts · ${s.kcal_part} kcal · ${s.proteines_part_g} g prot. · ${s.temps}</span>${s.prix_part_eur ? `<span class="r-price">≈ ${eur(s.prix_part_eur)} la part · ${eur(s.prix_total_eur)} la recette</span>` : ""}</summary>
       <div class="r-body">
