@@ -2,7 +2,7 @@
 // Table public.progress : une ligne par semaine (week = WEEK), protégée par RLS (chacun ne voit que ses lignes).
 const KEY = "marcel-" + WEEK;
 const emptyFood = () => ({ daily: {}, water: {}, batch: {}, courses: {}, pick: {} });
-let state = { lvl: "D", checks: {}, quests: {}, records: {}, food: emptyFood() };
+let state = { lvl: "D", checks: {}, quests: {}, records: {}, alt: {}, food: emptyFood() };
 try { const raw = localStorage.getItem(KEY); if (raw) state = Object.assign(state, JSON.parse(raw)); state.food = Object.assign(emptyFood(), state.food || {}); } catch (e) {}
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
@@ -24,7 +24,7 @@ async function loadProgress() {
   if (error) { setSync("Hors ligne : progression gardée sur cet appareil."); return; }
   if (data) {
     const d = data.data || {};
-    state = { lvl: d.lvl || state.lvl, checks: d.checks || {}, quests: d.quests || {}, records: d.records || {}, food: Object.assign(emptyFood(), d.food || {}) };
+    state = { lvl: d.lvl || state.lvl, checks: d.checks || {}, quests: d.quests || {}, records: d.records || {}, alt: d.alt || {}, food: Object.assign(emptyFood(), d.food || {}) };
     ["push", "pull", "plank"].forEach(k => document.getElementById("rec-" + k).value = state.records[k] || "");
     renderAll(true);
   } else if (Object.keys(state.checks).length || Object.keys(state.quests).length) save();

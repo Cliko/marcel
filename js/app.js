@@ -1,6 +1,9 @@
 // Rendu et interactions de l'appli (repris de la version artefact)
 function exId(d, i) { return d.id + "-" + i; }
-function dayDone(id) { const d = DAYS.find(x => x.id === id); return d.ex.every((_, i) => state.checks[exId(d, i)]); }
+// Jour de flemme : une session de basse énergique (45 min et plus, 450 à 600 kcal) remplace la séance prévue
+const BASS = [{ min: 45, label: "45 min", kcal: 450 }, { min: 60, label: "1 h", kcal: 520 }, { min: 90, label: "1 h 30 et +", kcal: 600 }];
+function bassOf(id) { const m = (state.alt || {})[id]; return BASS.find(b => b.min === m) || null; }
+function dayDone(id) { const d = DAYS.find(x => x.id === id); return !!bassOf(id) || d.ex.every((_, i) => state.checks[exId(d, i)]); }
 function questDone(q) { return q.auto ? q.auto() : !!state.quests[q.id]; }
 
 const pad = n => String(n).padStart(2, "0");
@@ -18,15 +21,18 @@ function renderDays() {
     `<button type="button" id="pick-${d.id}" data-day="${d.id}" aria-pressed="${d.id === focusId}" class="${dayDone(d.id) ? "ok" : ""}${d.iso === todayIso ? " is-today" : ""}">${SHORT[i]}<i>${d.iso === todayIso ? "auj." : d.iso.slice(8)}</i></button>`).join("");
   document.getElementById("days").innerHTML = DAYS.map(d => {
     const done = d.ex.filter((_, i) => state.checks[exId(d, i)]).length;
-    const full = done === d.ex.length;
+    const bass = bassOf(d.id), full = done === d.ex.length || !!bass;
     return `<section class="day${d.iso === todayIso ? " today" : ""}${d.id === focusId ? " focus" : ""}" aria-labelledby="h-${d.id}">
       <div class="day-head">
         <span class="day-date">${d.iso === todayIso ? "Aujourd'hui" : d.date}</span>
         <h3 id="h-${d.id}">${d.title}</h3>
-        <span class="pill${full ? " ok" : ""}">${full ? "Séance validée · +" + d.bonus + " XP" : done + "/" + d.ex.length + " · " + d.bonus + " XP"}</span>
+        <span class="pill${full ? " ok" : ""}">${bass ? "Basse · +" + d.bonus + " XP" : full ? "Séance validée · +" + d.bonus + " XP" : done + "/" + d.ex.length + " · " + d.bonus + " XP"}</span>
       </div>
       <div class="day-note">${d.note}</div>
-      <table class="ex-table">
+      <div class="alt${bass ? " on" : ""}"><span class="alt-q">${bass ? `Séance remplacée par ${bass.label} de basse énergique, ≈ ${bass.kcal} kcal. Bien joué quand même !` : "Pas la motivation ? Une session de basse énergique remplace la séance :"}</span>
+        <div class="seg alt-seg" role="group" aria-label="Session de basse à la place">${BASS.map(b =>
+          `<button type="button" id="alt-${d.id}-${b.min}" data-alt="${b.min}" data-altday="${d.id}" aria-pressed="${!!bass && bass.min === b.min}">${b.label}<i>≈ ${b.kcal} kcal</i></button>`).join("")}</div></div>
+      <table class="ex-table${bass ? " swapped" : ""}">
         <thead><tr><th></th><th>Exercice</th><th>Séries × reps</th><th>Repos</th></tr></thead>
         <tbody>${d.ex.map((e, i) => {
           const id = exId(d, i), on = !!state.checks[id];
@@ -229,6 +235,13 @@ document.querySelector(".tabs").addEventListener("click", e => {
 document.getElementById("daypick").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   focusId = b.dataset.day; renderDays(); renderFood(); document.getElementById("pick-" + focusId)?.focus();
+});
+document.getElementById("days").addEventListener("click", e => {
+  const b = e.target.closest("[data-alt]"); if (!b) return;
+  const id = b.dataset.altday, m = +b.dataset.alt; state.alt = state.alt || {};
+  state.alt[id] = state.alt[id] === m ? null : m;
+  save(); renderDays(); renderProgress(); renderMarcel(); notifyNew();
+  document.getElementById(b.id)?.focus();
 });
 document.getElementById("days").addEventListener("change", e => {
   const id = e.target.dataset.ex; if (!id) return;
