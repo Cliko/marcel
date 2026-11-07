@@ -326,5 +326,14 @@ resetBtn.addEventListener("click", () => {
 document.getElementById("plate-rule").textContent = NUTRI.regle_assiette || "";
 document.getElementById("week-label").textContent = WEEK_LABEL;
 initBilan();
+// Ouverture depuis la notification « recettes prêtes » : onglet Nutrition, recettes à venir (ou celles de la semaine) à l'écran
+if (/[?&]recettes\b/.test(location.search)) {
+  history.replaceState(null, "", location.pathname);
+  tab = "food";
+  setTimeout(() => {
+    const nw = document.getElementById("next-week"), el = nw && !nw.hidden ? nw : document.getElementById("batch"), band = document.querySelector(".xpband");
+    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - (band ? band.offsetHeight : 0) - 12, behavior: "smooth" });
+  }, 300);
+}
 renderAll(true);
 loadProgress();
