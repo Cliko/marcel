@@ -220,7 +220,11 @@ function installerContenu(profil, prog, nutri, nutriNext) {
     seances: () => TRAINING.every(dayDone),
     records: () => RECORDS.every(r => String(state.records[r.id] || "").trim() !== ""),
   };
+  // Bilan du samedi (propositions écrites par Marcel dans le programme) et changements annoncés pour la semaine
+  window.BILAN = prog.bilan && Array.isArray(prog.bilan.propositions) ? prog.bilan : null;
+  window.CHANGEMENTS = prog.changements || [];
   window.QUESTS = (prog.quests || []).map(q => ({ ...q, auto: autos[q.auto] }));
+  QUESTS.push({ id: "bilan", title: "Bilan fait", desc: "Donne ton ressenti du week-end et réponds aux propositions de Marcel", xp: 30, auto: bilanFait });
   (nutri.quetes_nutrition || []).forEach(q => QUESTS.push({ id: q.id, food: true, title: q.label.split(" : ")[0], desc: q.label.split(" : ").slice(1).join(" : "), xp: q.xp,
     auto: q.id === "n_batch" ? () => { const c = pickedBatch(NUTRI, ""); return c.length >= 2 && c.every(i => state.food.batch[i]); }
         : q.id === "n_eau" ? () => DAYS.filter(d => (state.food.water[d.id] || 0) >= 8).length >= 5 : undefined }));

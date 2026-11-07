@@ -1,0 +1,8 @@
+{
+  "name": "marcel-outils",
+  "private": true,
+  "description": "Outils des tâches planifiées de Marcel (publier.js)",
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

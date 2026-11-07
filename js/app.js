@@ -36,6 +36,7 @@ function renderDays() {
       ${PLANB ? `<div class="alt${bass ? " on" : ""}"><span class="alt-q">${bass ? `Séance remplacée par ton plan B (${PLANB.label.toLowerCase()}${BASS.length > 1 ? ", " + bass.label : ""}${bass.kcal ? ", ≈ " + bass.kcal + " kcal" : ""}). Bien joué quand même !` : `Pas la motivation ? ${PLANB.label} remplace la séance :`}</span>
         <div class="seg alt-seg" role="group" aria-label="${PLANB.label} à la place">${BASS.map(b =>
           `<button type="button" id="alt-${d.id}-${b.min}" data-alt="${b.min}" data-altday="${d.id}" aria-pressed="${!!bass && bass.min === b.min}">${b.label}${kc(b)}</button>`).join("")}</div></div>` : ""}
+      ${full && !bass ? avisSeance(d) : ""}
       <table class="ex-table${bass ? " swapped" : ""}">
         <thead><tr><th></th><th>Exercice</th><th>Séries × reps</th><th>Repos</th></tr></thead>
         <tbody>${d.ex.map((e, i) => {
@@ -228,10 +229,11 @@ function renderMarcel() {
   else if (dayDone(d.id)) msg = `Séance du jour bouclée, chapeau ! ${next ? "Plus que " + (next.xp - xp) + " XP avant le palier " + next.name + "." : "Palier Or en poche."}`;
   else msg = `Bonjour ${PRENOM} ! Aujourd'hui : ${d.title.toLowerCase()}. On s'y met ?`;
   if (tab === "prog" && PROG_DEMARRAGE) msg += " C'est ton programme de démarrage : le vrai arrive dimanche soir.";
+  if (tab === "prog" && bilanOuvert() && !bilanFait()) msg += BILAN ? " Mes propositions pour la semaine prochaine t'attendent dans ton bilan, juste en dessous." : " Ton bilan de la semaine t'attend juste en dessous : dis-moi comment ça s'est passé.";
   if (tab === "food") { const i = Math.max(0, DAYS.findIndex(x => x.id === focusId)); const A = NUTRI.astuces_marcel || []; if (A.length) msg = "Astuce du jour : " + A[i % A.length]; }
   document.getElementById("marcel").textContent = msg;
 }
-function renderAll(silent) { renderLevel(); renderTab(); renderDays(); renderFood(); renderRecords(); renderProgress(); renderMarcel(); if (silent) achieved = snapshot(); else notifyNew(); }
+function renderAll(silent) { renderLevel(); renderTab(); renderDays(); renderBilan(); renderFood(); renderRecords(); renderProgress(); renderMarcel(); if (silent) achieved = snapshot(); else notifyNew(); }
 
 document.querySelector(".level").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
@@ -249,12 +251,12 @@ document.getElementById("days").addEventListener("click", e => {
   const b = e.target.closest("[data-alt]"); if (!b) return;
   const id = b.dataset.altday, m = +b.dataset.alt; state.alt = state.alt || {};
   state.alt[id] = state.alt[id] === m ? null : m;
-  save(); renderDays(); renderProgress(); renderMarcel(); notifyNew();
+  save(); renderDays(); renderBilan(); renderProgress(); renderMarcel(); notifyNew();
   document.getElementById(b.id)?.focus();
 });
 document.getElementById("days").addEventListener("change", e => {
   const id = e.target.dataset.ex; if (!id) return;
-  state.checks[id] = e.target.checked; save(); renderDays(); renderProgress(); renderMarcel(); notifyNew();
+  state.checks[id] = e.target.checked; save(); renderDays(); renderBilan(); renderProgress(); renderMarcel(); notifyNew();
   document.getElementById("c-" + id)?.focus();
 });
 document.getElementById("view-quests").addEventListener("change", e => {
@@ -318,10 +320,11 @@ let armed = false;
 resetBtn.addEventListener("click", () => {
   if (!armed) { armed = true; resetBtn.textContent = "Confirmer la remise à zéro"; resetBtn.classList.add("warn");
     setTimeout(() => { armed = false; resetBtn.textContent = "Remettre à zéro"; resetBtn.classList.remove("warn"); }, 4000); return; }
-  state = { lvl: state.lvl, checks: {}, quests: {}, records: {}, alt: {}, food: emptyFood() }; save(); renderFood();
+  state = { lvl: state.lvl, checks: {}, quests: {}, records: {}, alt: {}, food: emptyFood(), bilan: emptyBilan() }; save(); renderFood();
   armed = false; resetBtn.textContent = "Remettre à zéro"; resetBtn.classList.remove("warn"); renderAll(true);
 });
 document.getElementById("plate-rule").textContent = NUTRI.regle_assiette || "";
 document.getElementById("week-label").textContent = WEEK_LABEL;
+initBilan();
 renderAll(true);
 loadProgress();

@@ -2,7 +2,8 @@
 // Tables (voir supabase/profils.sql) : profiles, programs et nutrition (une ligne par profil et par semaine), progress (une ligne par compte et par semaine).
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 const emptyFood = () => ({ daily: {}, water: {}, batch: {}, courses: {}, pick: {} });
-const freshState = () => ({ lvl: "D", checks: {}, quests: {}, records: {}, alt: {}, food: emptyFood() });
+const emptyBilan = () => ({ avis: {}, forme: null, douleur: null, semaine: null, remarque: "", rep: {} });
+const freshState = () => ({ lvl: "D", checks: {}, quests: {}, records: {}, alt: {}, food: emptyFood(), bilan: emptyBilan() });
 let state = freshState(), user = null, profil = null, WEEK = null, KEY = null, dbTimer = null, appStarted = false;
 
 function save() {
@@ -21,7 +22,7 @@ async function loadProgress() {
   if (error) { setSync("Hors ligne : progression gardée sur cet appareil."); return; }
   if (data) {
     const d = data.data || {};
-    state = { lvl: d.lvl || state.lvl, checks: d.checks || {}, quests: d.quests || {}, records: d.records || {}, alt: d.alt || {}, food: Object.assign(emptyFood(), d.food || {}) };
+    state = { lvl: d.lvl || state.lvl, checks: d.checks || {}, quests: d.quests || {}, records: d.records || {}, alt: d.alt || {}, food: Object.assign(emptyFood(), d.food || {}), bilan: Object.assign(emptyBilan(), d.bilan || {}) };
     renderAll(true);
   } else if (Object.keys(state.checks).length || Object.keys(state.quests).length) save();
   setSync("Progression enregistrée en ligne.");
@@ -80,8 +81,10 @@ async function chargerSemaine(p) {
   ]);
   if (pr.error || nu.error) return null;
   const P = Object.fromEntries(pr.data.map(r => [r.week, r.data])), N = Object.fromEntries(nu.data.map(r => [r.week, r.data]));
-  const week = P[w1] ? w1 : w0, after = week === w1 ? w2 : w1;
-  return { week, prog: P[week] || programmeDemarrage(p.sport, today), nutri: N[week] || nutritionDemarrage(p.nutrition), nutriNext: N[after] || null };
+  const week = P[w1] && P[w1].days ? w1 : w0, after = week === w1 ? w2 : w1;
+  // Une ligne sans jours = seulement le bilan du samedi pour un profil encore en programme de démarrage
+  const row = P[week], prog = row && row.days ? row : Object.assign(programmeDemarrage(p.sport, today), row && row.bilan ? { bilan: row.bilan } : {});
+  return { week, prog, nutri: N[week] || nutritionDemarrage(p.nutrition), nutriNext: N[after] || null };
 }
 
 async function demarrer(session) {
@@ -105,7 +108,7 @@ async function demarrer(session) {
   installerContenu(profil, c.prog, c.nutri, c.nutriNext);
   state = freshState();
   if (profil.sport && profil.sport.niveau && profil.sport.niveau !== "debutant") state.lvl = "I";
-  try { const raw = localStorage.getItem(KEY); if (raw) state = Object.assign(state, JSON.parse(raw)); state.food = Object.assign(emptyFood(), state.food || {}); } catch (e) {}
+  try { const raw = localStorage.getItem(KEY); if (raw) state = Object.assign(state, JSON.parse(raw)); state.food = Object.assign(emptyFood(), state.food || {}); state.bilan = Object.assign(emptyBilan(), state.bilan || {}); } catch (e) {}
   appStarted = true;
   const s = document.createElement("script"); s.src = "js/app.js?v=" + APP_VERSION; document.body.appendChild(s);
 }

@@ -89,10 +89,12 @@ function renderProfil() {
     <div class="panel"><div class="subhead"><h2>${esc(p.prenom)}</h2><span class="eyebrow">${esc(p.email)}</span></div>
       <p class="rules">Tes changements s'appliquent au programme du dimanche soir et aux recettes du vendredi matin.</p>
       <div class="foot"><span></span><button class="linkbtn" id="logout" type="button">Se déconnecter</button></div></div>
+    <div class="panel"><div class="subhead"><h2>Notifications</h2></div><div id="notif-profil"></div></div>
     <div class="panel"><div class="subhead"><h2>Sport</h2><button class="linkbtn" type="button" data-edit="sport">Modifier</button></div>${resume("sport", p.sport)}</div>
     <div class="panel"><div class="subhead"><h2>Nutrition</h2><button class="linkbtn" type="button" data-edit="nutrition">Modifier</button></div>${resume("nutrition", p.nutrition)}</div>
     ${p.role === "admin" ? `<div class="panel" id="admin"><div class="subhead"><h2>Admin</h2><span class="eyebrow">profils</span></div><div id="admin-body"><p class="rules">Chargement…</p></div></div>` : ""}
   </div>`;
+  renderNotifBouton(document.getElementById("notif-profil"), false);
   if (p.role === "admin") renderAdmin();
 }
 document.getElementById("view-profil").addEventListener("click", async e => {
