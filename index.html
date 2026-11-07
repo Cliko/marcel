@@ -88,7 +88,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 
 .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; background: var(--surface); border-top: 1px solid var(--line);
   padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
-.tabs-inner { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.tabs-inner { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
 .tabs button { font: 700 12px var(--body); background: none; border: 0; border-radius: 12px; color: var(--muted); padding: 6px 4px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; position: relative; }
 .tabs button svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .tabs button[aria-selected="true"] { color: var(--accent); background: var(--chalk); }
@@ -254,20 +254,54 @@ body.locked { overflow: hidden; }
 #login-msg { min-height: 1.5em; }
 .avatar { overflow: hidden; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.25) translateY(4%); }
+/* Questionnaires, profil, admin */
+.quiz { position: fixed; inset: 0; z-index: 60; background: var(--bg); overflow-y: auto; padding: 24px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px)); }
+.quiz-card { width: min(560px, 100%); margin: 0 auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 18px; }
+.q-field { display: flex; flex-direction: column; gap: 8px; }
+.q-label { font-weight: 700; font-size: 14px; }
+.q-label .req { font-weight: 400; font-size: 12px; color: var(--muted); }
+.q-field input, .q-field select, .admin-new input { font: 16px var(--body); padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--chalk); color: var(--ink); min-width: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 700 13px var(--body); border: 1px solid var(--line); background: var(--chalk); color: var(--ink); padding: 8px 12px; border-radius: 999px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.fixes { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.fixe { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; width: 100%; }
+.quiz-actions { display: flex; justify-content: flex-end; gap: 10px; align-items: center; }
+.primary { font: 700 15px var(--body); border: 0; border-radius: 999px; padding: 11px 18px; background: var(--accent); color: var(--surface); cursor: pointer; }
+.primary:disabled { opacity: .6; }
+.resume { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 6px 12px; margin: 0; font-size: 14px; }
+.resume dt { color: var(--muted); }
+.resume dd { margin: 0; }
+.admin-list li { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; }
+.admin-list li.off { opacity: .6; }
+.admin-list li > div { display: flex; flex-direction: column; min-width: 0; }
+.admin-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.admin-new { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.day.rest .day-note { padding-bottom: 4px; }
 [hidden] { display: none !important; }
 </style>
 </head>
 <body>
-<div class="login" id="login" hidden>
-  <form class="login-card" id="login-form">
+<div class="quiz" id="quiz" hidden></div>
+<div class="login" id="login">
+  <form class="login-card" id="login-form" hidden>
     <div class="coach">
       <div class="avatar" aria-hidden="true"><img src="icons/icon-192.png" alt=""></div>
       <div><div class="coach-name">Marcel</div><div class="eyebrow">Programme sportif</div></div>
     </div>
-    <p class="rules">Un lien de connexion part sur ton e-mail. Une fois connecté, l'appli s'en souvient sur ce téléphone.</p>
-    <button class="primary" id="login-btn" type="submit">Connexion</button>
+    <p class="rules">Entre ton e-mail : un lien de connexion t'y attend. Une fois connecté, l'appli s'en souvient sur ce téléphone.</p>
+    <label for="login-email">E-mail<input type="email" id="login-email" autocomplete="email" required placeholder="toi@exemple.fr"></label>
+    <button class="primary" id="login-btn" type="submit">Recevoir mon lien</button>
     <p class="rules" id="login-msg" role="status"></p>
   </form>
+  <div class="login-card" id="login-stop">
+    <div class="coach">
+      <div class="avatar" aria-hidden="true"><img src="icons/icon-192.png" alt=""></div>
+      <div><div class="coach-name">Marcel</div><div class="eyebrow">Programme sportif</div></div>
+    </div>
+    <p class="rules" id="login-stop-msg" role="status">Chargement de ta semaine…</p>
+    <button class="linkbtn" id="login-out" type="button" hidden>Se déconnecter</button>
+  </div>
 </div>
 
 
@@ -289,7 +323,7 @@ body.locked { overflow: hidden; }
         <div class="avatar" aria-hidden="true"><img src="icons/icon-192.png" alt=""></div>
         <div>
           <div class="coach-name">Marcel<small>ton coach sport et nutrition</small></div>
-          <div class="bubble" id="marcel">Bonjour Ben !</div>
+          <div class="bubble" id="marcel">Bonjour !</div>
         </div>
       </div>
       <div class="week-row">
@@ -324,22 +358,19 @@ body.locked { overflow: hidden; }
             <div class="tiers" id="tiers"></div>
             <p class="rules">Coche chaque exercice. Une séance complète rapporte son bonus, les quêtes s'ajoutent par-dessus.</p>
           </div>
-          <div class="panel">
+          <div class="panel" id="records-panel">
             <div class="eyebrow">Records du dimanche</div>
-            <div class="records">
-              <label for="rec-push">Pompes max<input id="rec-push" inputmode="numeric" placeholder="reps"></label>
-              <label for="rec-pull">Rowing table<input id="rec-pull" inputmode="numeric" placeholder="reps"></label>
-              <label for="rec-plank">Planche max<input id="rec-plank" inputmode="numeric" placeholder="sec"></label>
-            </div>
-            <p class="rules">Au poids du corps uniquement, sans barre. Ces chiffres serviront à calibrer la semaine 2.</p>
+            <div class="records" id="records"></div>
+            <p class="rules" id="records-note"></p>
           </div>
           <div class="foot">
             <span id="sync">Progression gardée sur cet appareil.</span>
-            <span style="display:flex;gap:8px"><button class="linkbtn" id="reset" type="button">Remettre à zéro</button><button class="linkbtn" id="logout" type="button">Se déconnecter</button></span>
+            <button class="linkbtn" id="reset" type="button">Remettre à zéro</button>
           </div>
         </div>
       </div>
     </section>
+    <section id="view-profil" role="tabpanel" aria-labelledby="tab-profil" hidden></section>
     <section id="view-food" role="tabpanel" aria-labelledby="tab-food" hidden>
       <div class="stack">
         <div class="panel rule"><div class="plate" aria-hidden="true"></div><p><strong>La règle de l'assiette.</strong> <span id="plate-rule"></span></p></div>
@@ -376,6 +407,7 @@ body.locked { overflow: hidden; }
     <button id="tab-prog" type="button" role="tab" data-tab="prog" aria-controls="view-prog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12"/></svg>Séance</button>
     <button id="tab-quests" type="button" role="tab" data-tab="quests" aria-controls="view-quests"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0V4zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"/></svg>Quêtes<span class="count" id="q-count">0/15</span></button>
     <button id="tab-food" type="button" role="tab" data-tab="food" aria-controls="view-food"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-2 1-3 4-3 7h3v11"/></svg>Nutrition</button>
+    <button id="tab-profil" type="button" role="tab" data-tab="profil" aria-controls="view-profil"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Profil</button>
   </div>
 </nav>
 
@@ -383,11 +415,11 @@ body.locked { overflow: hidden; }
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="js/config.js"></script>
-<script src="data/semaine.js"></script>
-<script src="data/prochaine.js"></script>
 <script src="data/refectory.js"></script>
+<script src="js/contenu.js"></script>
+<script src="js/profil.js"></script>
 <script src="js/stockage.js"></script>
-<script src="js/app.js"></script>
+<!-- js/app.js est chargé par js/stockage.js une fois le profil et la semaine chargés -->
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});</script>
 </body>
 </html>

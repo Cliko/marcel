@@ -1,9 +1,9 @@
-// Rendu et interactions de l'appli (repris de la version artefact)
+// Rendu et interactions de l'appli. Chargé par js/stockage.js une fois le profil et le contenu de la semaine installés (js/contenu.js).
 function exId(d, i) { return d.id + "-" + i; }
-// Jour de flemme : une session de basse énergique (45 min et plus, 450 à 600 kcal) remplace la séance prévue
-const BASS = [{ min: 45, label: "45 min", kcal: 450 }, { min: 60, label: "1 h", kcal: 520 }, { min: 90, label: "1 h 30 et +", kcal: 600 }];
+// Jour de flemme : le plan B du profil (pour Ben, une session de basse énergique de 45 min et plus) remplace la séance prévue
+const BASS = PLANB ? PLANB.options : [];
 function bassOf(id) { const m = (state.alt || {})[id]; return BASS.find(b => b.min === m) || null; }
-function dayDone(id) { const d = DAYS.find(x => x.id === id); return !!bassOf(id) || d.ex.every((_, i) => state.checks[exId(d, i)]); }
+function dayDone(id) { const d = DAYS.find(x => x.id === id); return !!bassOf(id) || (d.ex.length > 0 && d.ex.every((_, i) => state.checks[exId(d, i)])); }
 function questDone(q) { return q.auto ? q.auto() : !!state.quests[q.id]; }
 
 const pad = n => String(n).padStart(2, "0");
@@ -21,17 +21,21 @@ function renderDays() {
     `<button type="button" id="pick-${d.id}" data-day="${d.id}" aria-pressed="${d.id === focusId}" class="${dayDone(d.id) ? "ok" : ""}${d.iso === todayIso ? " is-today" : ""}">${SHORT[i]}<i>${d.iso === todayIso ? "auj." : d.iso.slice(8)}</i></button>`).join("");
   document.getElementById("days").innerHTML = DAYS.map(d => {
     const done = d.ex.filter((_, i) => state.checks[exId(d, i)]).length;
-    const bass = bassOf(d.id), full = done === d.ex.length || !!bass;
+    const bass = bassOf(d.id), full = (d.ex.length > 0 && done === d.ex.length) || !!bass;
+    if (!d.ex.length) return `<section class="day rest${d.iso === todayIso ? " today" : ""}${d.id === focusId ? " focus" : ""}" aria-labelledby="h-${d.id}">
+      <div class="day-head"><span class="day-date">${d.iso === todayIso ? "Aujourd'hui" : d.date}</span><h3 id="h-${d.id}">${d.title}</h3><span class="pill">Repos</span></div>
+      <div class="day-note">${d.note || ""}</div></section>`;
+    const kc = b => b.kcal ? `<i>≈ ${b.kcal} kcal</i>` : "";
     return `<section class="day${d.iso === todayIso ? " today" : ""}${d.id === focusId ? " focus" : ""}" aria-labelledby="h-${d.id}">
       <div class="day-head">
         <span class="day-date">${d.iso === todayIso ? "Aujourd'hui" : d.date}</span>
         <h3 id="h-${d.id}">${d.title}</h3>
-        <span class="pill${full ? " ok" : ""}">${bass ? "Basse · +" + d.bonus + " XP" : full ? "Séance validée · +" + d.bonus + " XP" : done + "/" + d.ex.length + " · " + d.bonus + " XP"}</span>
+        <span class="pill${full ? " ok" : ""}">${bass ? (PLANB.court || "Plan B") + " · +" + d.bonus + " XP" : full ? "Séance validée · +" + d.bonus + " XP" : done + "/" + d.ex.length + " · " + d.bonus + " XP"}</span>
       </div>
       <div class="day-note">${d.note}</div>
-      <div class="alt${bass ? " on" : ""}"><span class="alt-q">${bass ? `Séance remplacée par ${bass.label} de basse énergique, ≈ ${bass.kcal} kcal. Bien joué quand même !` : "Pas la motivation ? Une session de basse énergique remplace la séance :"}</span>
-        <div class="seg alt-seg" role="group" aria-label="Session de basse à la place">${BASS.map(b =>
-          `<button type="button" id="alt-${d.id}-${b.min}" data-alt="${b.min}" data-altday="${d.id}" aria-pressed="${!!bass && bass.min === b.min}">${b.label}<i>≈ ${b.kcal} kcal</i></button>`).join("")}</div></div>
+      ${PLANB ? `<div class="alt${bass ? " on" : ""}"><span class="alt-q">${bass ? `Séance remplacée par ton plan B (${PLANB.label.toLowerCase()}${BASS.length > 1 ? ", " + bass.label : ""}${bass.kcal ? ", ≈ " + bass.kcal + " kcal" : ""}). Bien joué quand même !` : `Pas la motivation ? ${PLANB.label} remplace la séance :`}</span>
+        <div class="seg alt-seg" role="group" aria-label="${PLANB.label} à la place">${BASS.map(b =>
+          `<button type="button" id="alt-${d.id}-${b.min}" data-alt="${b.min}" data-altday="${d.id}" aria-pressed="${!!bass && bass.min === b.min}">${b.label}${kc(b)}</button>`).join("")}</div></div>` : ""}
       <table class="ex-table${bass ? " swapped" : ""}">
         <thead><tr><th></th><th>Exercice</th><th>Séries × reps</th><th>Repos</th></tr></thead>
         <tbody>${d.ex.map((e, i) => {
@@ -120,14 +124,14 @@ function renderFood() {
   const d = DAYS.find(x => x.id === focusId), i = DAYS.indexOf(d);
   document.getElementById("food-pick").innerHTML = DAYS.map((x, k) =>
     `<button type="button" id="fpick-${x.id}" data-day="${x.id}" aria-pressed="${x.id === focusId}" class="${foodDayDone(x.id) ? "ok" : ""}${x.iso === todayIso ? " is-today" : ""}">${SHORT[k]}<i>${x.iso === todayIso ? "auj." : x.iso.slice(8)}</i></button>`).join("");
-  const sport = d.id === "mer" || d.id === "dim";
+  const sport = d.cardio !== undefined ? d.cardio : (d.id === "mer" || d.id === "dim");
   document.getElementById("food-day").innerHTML = `
     <div class="day-head" style="padding:0"><span class="day-date">${d.iso === todayIso ? "Aujourd'hui" : d.date}</span><h3>Ma journée</h3>
       <span class="pill${foodDayDone(d.id) ? " ok" : ""}">${foodDayXp(d.id)}/${FOOD_DAY_XP} XP</span></div>
     <ul class="checklist">${FOOD_DAILY.map(f => {
       if (f.type === "compteur") {
         const n = state.food.water[d.id] || 0;
-        return `<li class="water${n >= f.max ? " done" : ""}"><div><span class="ex-name">${f.label}</span><span class="ex-tip">${sport ? f.bonus + " (jour " + (d.id === "mer" ? "vélo" : "piscine") + ")" : f.bonus}</span></div>
+        return `<li class="water${n >= f.max ? " done" : ""}"><div><span class="ex-name">${f.label}</span><span class="ex-tip">${sport ? f.bonus + " (" + d.title.toLowerCase() + " aujourd'hui)" : f.bonus}</span></div>
           <div class="glasses" role="group" aria-label="Verres d'eau bus">${Array.from({ length: f.max }, (_, k) =>
             `<button type="button" class="glass${k < n ? " full" : ""}" data-water="${k + 1}" aria-label="${k + 1} verre${k ? "s" : ""}"></button>`).join("")}<span class="num">${n}/${f.max}</span></div></li>`;
       }
@@ -142,7 +146,7 @@ function renderFood() {
       return `<li class="${on ? "done" : ""}"><input type="checkbox" id="f-${id}" data-food="${id}" ${on ? "checked" : ""}><label for="f-${id}" class="ex-name">${f.label}</label><span class="q-xp">+${f.xp}</span></li>`;
     }).join("")}</ul>`;
   const S = NUTRI.batch_cooking.sessions;
-  document.getElementById("batch-sub").textContent = S.length + " sessions · " + S[0].parts + " parts";
+  document.getElementById("batch-sub").textContent = S.length ? S.length + " recettes · " + S[0].parts + " parts" : "";
   document.getElementById("batch-rule").textContent = NUTRI.batch_cooking.principe;
   const next = typeof NUTRI_NEXT !== "undefined" && NUTRI_NEXT ? NUTRI_NEXT : null;
   const curPick = pickedBatch(NUTRI, "");
@@ -184,7 +188,7 @@ function renderFood() {
       const on = !!state.food.courses[m.key]; all++; if (on) { got++; spent += m.prix; }
       return `<li class="${on ? "done" : ""}"><input type="checkbox" id="s-${m.key}" data-course="${m.key}" ${on ? "checked" : ""}><label for="s-${m.key}">${m.name}${qty(m) ? ` <b class="c-qty">${qty(m)}</b>` : ""}${m.from.length > 1 ? `<span class="ex-tip">${m.from.join(" + ")}</span>` : ""}</label>${m.prix ? `<span class="c-price">${eur(m.prix)}</span>` : ""}</li>`;
     }).join("")}</ul></div>`);
-  document.getElementById("courses").innerHTML = groups.length ? groups.join("") : `<p class="rules">Choisis au moins une recette au-dessus.</p>`;
+  document.getElementById("courses").innerHTML = groups.length ? groups.join("") : `<p class="rules">${R.length ? "Choisis au moins une recette au-dessus." : "Ta liste de courses arrivera avec tes recettes."}</p>`;
   document.getElementById("courses-count").textContent = got + "/" + all;
   document.getElementById("budget").innerHTML = `<div class="budget-row"><span>Recettes choisies (${chosen.length}/${R.length})</span><b>≈ ${eur(total)}</b></div>
     <div class="budget-row"><span>Déjà acheté</span><b>≈ ${eur(spent)}</b></div><div class="budget-row"><span>Reste à acheter</span><b>≈ ${eur(Math.max(0, total - spent))}</b></div>
@@ -208,21 +212,26 @@ function renderTab() {
   document.getElementById("view-prog").hidden = tab !== "prog";
   document.getElementById("view-quests").hidden = tab !== "quests";
   document.getElementById("view-food").hidden = tab !== "food";
-  document.getElementById("view-title").textContent = { prog: "Ta séance", quests: "Tes quêtes", food: "Ta nutrition" }[tab];
+  document.getElementById("view-profil").hidden = tab !== "profil";
+  if (tab === "profil") renderProfil();
+  document.getElementById("view-title").textContent = { prog: "Ta séance", quests: "Tes quêtes", food: "Ta nutrition", profil: "Ton profil" }[tab];
   document.querySelector(".level").hidden = tab !== "prog";
 }
 function renderMarcel() {
   const d = DAYS.find(x => x.iso === todayIso);
   const xp = computeXp(), next = TIERS.find(x => xp < x.xp);
   let msg;
-  if (todayIso < DAYS[0].iso) msg = "Bonjour Ben ! On commence lundi avec une séance de poussée. Repose-toi bien d'ici là.";
-  else if (!d) msg = "Bravo pour cette semaine, Ben. Je prépare la suivante à partir de tes résultats.";
+  const first = DAYS.find(x => x.ex.length) || DAYS[0];
+  if (todayIso < DAYS[0].iso) msg = `Bonjour ${PRENOM} ! On commence ${new Date(first.iso + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long" })} avec : ${first.title.toLowerCase()}. Repose-toi bien d'ici là.`;
+  else if (!d) msg = `Bravo pour cette semaine, ${PRENOM}. Je prépare la suivante à partir de tes résultats.`;
+  else if (!d.ex.length) msg = `Bonjour ${PRENOM} ! Aujourd'hui c'est repos. Profites-en pour bien récupérer.`;
   else if (dayDone(d.id)) msg = `Séance du jour bouclée, chapeau ! ${next ? "Plus que " + (next.xp - xp) + " XP avant le palier " + next.name + "." : "Palier Or en poche."}`;
-  else msg = `Bonjour Ben ! Aujourd'hui : ${d.title.toLowerCase()}. On s'y met ?`;
-  if (tab === "food") { const i = Math.max(0, DAYS.findIndex(x => x.id === focusId)); msg = "Astuce du jour : " + NUTRI.astuces_marcel[i % NUTRI.astuces_marcel.length]; }
+  else msg = `Bonjour ${PRENOM} ! Aujourd'hui : ${d.title.toLowerCase()}. On s'y met ?`;
+  if (tab === "prog" && PROG_DEMARRAGE) msg += " C'est ton programme de démarrage : le vrai arrive dimanche soir.";
+  if (tab === "food") { const i = Math.max(0, DAYS.findIndex(x => x.id === focusId)); const A = NUTRI.astuces_marcel || []; if (A.length) msg = "Astuce du jour : " + A[i % A.length]; }
   document.getElementById("marcel").textContent = msg;
 }
-function renderAll(silent) { renderLevel(); renderTab(); renderDays(); renderFood(); renderProgress(); renderMarcel(); if (silent) achieved = snapshot(); else notifyNew(); }
+function renderAll(silent) { renderLevel(); renderTab(); renderDays(); renderFood(); renderRecords(); renderProgress(); renderMarcel(); if (silent) achieved = snapshot(); else notifyNew(); }
 
 document.querySelector(".level").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
@@ -253,10 +262,16 @@ document.getElementById("view-quests").addEventListener("change", e => {
   state.quests[id] = e.target.checked; save(); renderProgress(); notifyNew();
   document.getElementById("q-" + id)?.focus();
 });
-["push", "pull", "plank"].forEach(k => {
-  const el = document.getElementById("rec-" + k);
-  el.value = state.records[k] || "";
-  el.addEventListener("input", () => { state.records[k] = el.value; save(); renderProgress(); notifyNew(); });
+// Records de fin de semaine : définis par le programme (pour Ben : pompes, rowing sous une table, planche)
+function renderRecords() {
+  document.getElementById("records").innerHTML = RECORDS.map(r =>
+    `<label for="rec-${r.id}">${r.label}<input id="rec-${r.id}" data-rec="${r.id}" inputmode="numeric" placeholder="${r.unit || ""}" value="${String(state.records[r.id] || "").replace(/"/g, "&quot;")}"></label>`).join("");
+  document.getElementById("records-note").textContent = RECORDS_NOTE;
+  document.getElementById("records-panel").hidden = !RECORDS.length;
+}
+document.getElementById("records").addEventListener("input", e => {
+  const k = e.target.dataset.rec; if (!k) return;
+  state.records[k] = e.target.value; save(); renderProgress(); notifyNew();
 });
 document.getElementById("view-food").addEventListener("click", e => {
   const pick = e.target.closest("[data-day]");
@@ -284,7 +299,7 @@ function afterFood() { save(); renderFood(); renderProgress(); notifyNew(); }
 // Choix de Marcel pour la semaine (data/refectory.js, rempli le dimanche)
 function renderRefectPicks() {
   const box = document.getElementById("refect-picks");
-  const P = typeof REFECT_PICKS !== "undefined" ? REFECT_PICKS : null;
+  const P = REFECTORY_ON && typeof REFECT_PICKS !== "undefined" ? REFECT_PICKS : null;
   const panel = document.getElementById("refectory");
   if (!P || !P.jours || !P.jours.length) { panel.hidden = true; return; }
   panel.hidden = false;
@@ -303,11 +318,10 @@ let armed = false;
 resetBtn.addEventListener("click", () => {
   if (!armed) { armed = true; resetBtn.textContent = "Confirmer la remise à zéro"; resetBtn.classList.add("warn");
     setTimeout(() => { armed = false; resetBtn.textContent = "Remettre à zéro"; resetBtn.classList.remove("warn"); }, 4000); return; }
-  state = { lvl: state.lvl, checks: {}, quests: {}, records: {}, food: emptyFood() }; save(); renderFood();
-  ["push", "pull", "plank"].forEach(k => document.getElementById("rec-" + k).value = "");
+  state = { lvl: state.lvl, checks: {}, quests: {}, records: {}, alt: {}, food: emptyFood() }; save(); renderFood();
   armed = false; resetBtn.textContent = "Remettre à zéro"; resetBtn.classList.remove("warn"); renderAll(true);
 });
-document.getElementById("plate-rule").textContent = NUTRI.regle_assiette;
+document.getElementById("plate-rule").textContent = NUTRI.regle_assiette || "";
 document.getElementById("week-label").textContent = WEEK_LABEL;
 renderAll(true);
-startSync();
+loadProgress();
