@@ -6,8 +6,9 @@ Hébergée sur GitHub Pages : https://cliko.github.io/marcel/
 ## Profils
 
 Chaque personne a son profil (table `profiles`) : l'admin (Ben) le crée dans l'onglet Profil > Admin avec un prénom et un e-mail,
-l'appli envoie le lien de connexion, et la personne remplit ses questionnaires sport et nutrition à la première ouverture.
-Seules les adresses invitées peuvent se connecter (trigger `verifier_invitation` sur `auth.users`).
+puis l'invite depuis Supabase (Authentication > Users > Invite user ; les inscriptions restent fermées). La personne reçoit
+son lien, et remplit ses questionnaires sport et nutrition à la première ouverture. Ensuite, elle se reconnecte en tapant son e-mail.
+Le compte est rattaché au profil par l'e-mail (trigger `lier_profil`) ; une invitation sans profil créé avant est refusée (`verifier_invitation`).
 Chacun ne voit que ses données ; l'admin voit seulement l'état des profils.
 
 Le contenu de la semaine est propre à chaque profil et vit dans Supabase :
@@ -67,5 +68,5 @@ Le texte des tâches du dimanche et du vendredi est dans `outils/taches-planifie
 
 1. SQL Editor : lancer `supabase/schema.sql`, puis `supabase/profils.sql` (crée aussi le profil admin de Ben).
 2. Authentication > URL Configuration : Site URL = `https://cliko.github.io/marcel/`.
-3. Authentication > Sign In / Providers : **autoriser les inscriptions** (« Allow new users to sign up »). Seules les adresses
-   ajoutées dans `profiles` passent : le trigger `verifier_invitation` refuse les autres.
+3. Authentication > Sign In / Providers : laisser les inscriptions **fermées**. On invite chaque personne depuis Authentication > Users,
+   après avoir créé son profil dans l'appli.
