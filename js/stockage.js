@@ -27,7 +27,8 @@ async function loadProgress() {
   setSync("Progression enregistrée en ligne.");
 }
 
-// Écran de connexion : on tape son e-mail ; le lien part seulement si l'adresse a un profil (contrôle côté Supabase)
+// Écran de connexion : on tape son e-mail ; le lien part seulement si l'adresse a déjà un compte.
+// Les inscriptions sont fermées : l'admin crée le profil dans l'appli puis invite la personne depuis Supabase.
 const login = document.getElementById("login");
 function showLogin(on, msg) {
   login.hidden = !on; document.body.classList.toggle("locked", on);
@@ -45,11 +46,11 @@ document.getElementById("login-form").addEventListener("submit", async e => {
   btn.disabled = false;
 });
 function envoyerLien(email) {
-  return sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: location.origin + location.pathname } });
+  return sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname } });
 }
 function messageLien(error) {
   const m = (error.message || "").toLowerCase();
-  if (m.includes("database error") || m.includes("non invitée") || m.includes("signups not allowed")) return "Cette adresse n'a pas de profil Marcel. Demande à ton coach de t'inviter.";
+  if (m.includes("database error") || m.includes("non invitée") || m.includes("signups not allowed")) return "Cette adresse n'a pas encore de compte Marcel. Demande à Ben de t'inviter.";
   if (error.status === 429 || m.includes("rate limit") || m.includes("seconds")) return "Trop d'envois d'affilée : réessaie dans quelques minutes.";
   return "Envoi impossible : " + error.message;
 }
@@ -89,7 +90,7 @@ async function demarrer(session) {
   let c = null;
   const r = await chargerProfil();
   if (r.horsLigne) c = lireCache(user.id);
-  else if (!r.data) { showLogin(true, "Ton profil n'existe pas ou a été désactivé. Demande à ton coach de t'inviter."); return; }
+  else if (!r.data) { showLogin(true, "Ton profil n'existe pas ou a été désactivé. Demande à Ben de t'inviter."); return; }
   else {
     profil = r.data;
     sb.from("profiles").update({ vu_le: new Date().toISOString() }).eq("id", profil.id).then(() => {});

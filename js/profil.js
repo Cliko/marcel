@@ -118,7 +118,7 @@ let adminProfils = [];
 const dateCourte = t => t ? new Date(t).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : "";
 function etat(x) {
   if (!x.actif) return "Désactivé";
-  if (!x.user_id) return x.lien_envoye_le ? "Lien envoyé le " + dateCourte(x.lien_envoye_le) + ", pas encore connecté" : "Pas encore invité";
+  if (!x.user_id) return "À inviter dans Supabase";
   if (!x.sport_maj || !x.nutrition_maj) return "Connecté, questionnaire à finir";
   return "Prêt" + (x.vu_le ? " · vu le " + dateCourte(x.vu_le) : "");
 }
@@ -129,20 +129,21 @@ async function renderAdmin(msg) {
   adminProfils = data;
   body.innerHTML = `<ul class="checklist admin-list">${data.map(x => `<li class="${x.actif ? "" : "off"}"><div><span class="ex-name">${esc(x.prenom)}${x.role === "admin" ? ' <span class="auto-tag">· admin</span>' : ""}</span>
       <span class="ex-tip">${esc(x.email)} · ${esc(etat(x))}</span></div>
-      ${x.id === PROFIL.id ? "" : `<span class="admin-btns">${x.actif ? `<button type="button" class="linkbtn" data-admin="lien" data-id="${x.id}">${x.lien_envoye_le || x.user_id ? "Renvoyer le lien" : "Envoyer le lien"}</button>` : ""}
+      ${x.id === PROFIL.id ? "" : `<span class="admin-btns">${x.actif && x.user_id ? `<button type="button" class="linkbtn" data-admin="lien" data-id="${x.id}">Renvoyer un lien</button>` : ""}
         <button type="button" class="linkbtn" data-admin="${x.actif ? "off" : "on"}" data-id="${x.id}">${x.actif ? "Désactiver" : "Réactiver"}</button></span>`}</li>`).join("")}</ul>
     <form class="admin-new" id="admin-new"><div class="eyebrow">Nouveau profil</div>
       <input type="text" id="new-prenom" placeholder="Prénom" aria-label="Prénom" required>
       <input type="email" id="new-email" placeholder="E-mail" aria-label="E-mail" required>
-      <button class="primary" type="submit">Créer et envoyer le lien</button>
-      <p class="rules" id="admin-msg" role="status">${esc(msg || "La personne reçoit un lien de connexion, puis remplit ses questionnaires à la première ouverture.")}</p></form>`;
+      <button class="primary" type="submit">Créer le profil</button>
+      <p class="rules" id="admin-msg" role="status">${msg || "Crée d'abord le profil ici, puis invite la personne depuis Supabase : elle reçoit son lien et remplit ses questionnaires à la première ouverture."}</p>
+      <a class="ex-link" href="${SUPABASE_USERS}" target="_blank" rel="noopener">Inviter dans Supabase (Users > Invite user) ↗</a></form>`;
   document.getElementById("admin-new").onsubmit = async e => {
     e.preventDefault();
     const prenom = document.getElementById("new-prenom").value.trim(), email = document.getElementById("new-email").value.trim().toLowerCase();
     const out = document.getElementById("admin-msg");
     const { data: cree, error: err } = await sb.from("profiles").insert({ prenom, email }).select().single();
     if (err) { out.textContent = err.code === "23505" ? "Cette adresse a déjà un profil." : "Création impossible : " + err.message; return; }
-    renderAdmin(await lien(cree));
+    renderAdmin(`Profil de ${esc(cree.prenom)} créé. Invite maintenant <b>${esc(cree.email)}</b> dans Supabase : Authentication > Users > Invite user.`);
   };
 }
 async function lien(x) {
@@ -154,7 +155,7 @@ async function lien(x) {
 async function adminAction(act, id, btn) {
   const x = adminProfils.find(p => p.id === id); if (!x) return;
   btn.disabled = true;
-  if (act === "lien") { renderAdmin(await lien(x)); return; }
+  if (act === "lien") { renderAdmin(esc(await lien(x))); return; }
   const { error } = await sb.from("profiles").update({ actif: act === "on" }).eq("id", id);
-  renderAdmin(error ? "Modification impossible : " + error.message : x.prenom + (act === "on" ? " est réactivé." : " est désactivé."));
+  renderAdmin(esc(error ? "Modification impossible : " + error.message : x.prenom + (act === "on" ? " est réactivé." : " est désactivé.")));
 }
