@@ -4,13 +4,14 @@
 //
 //   node outils/publier.js profils                              liste les profils actifs et leurs questionnaires (JSON)
 //   node outils/publier.js programme <email> <sXX> <fichier.json>   écrit programs (format : voir LISEZ-MOI)
-//   node outils/publier.js nutrition <email> <sXX> <fichier.json>   écrit nutrition (format de NUTRI)
+//   node outils/publier.js nutrition <email> <sXX> <fichier.json> [--sans-notif]
+//                                                               écrit nutrition (format de NUTRI) puis prévient le profil que ses recettes sont prêtes
 //   node outils/publier.js progression <email> <sXX>               affiche la progression de la semaine (JSON)
 //   node outils/publier.js bilan <email> <sXX> <fichier.json>       ajoute les propositions du samedi au programme de sXX (format : voir LISEZ-MOI)
 //   node outils/publier.js push-cles                                crée les clés VAPID des notifications si elles manquent
 //   node outils/publier.js notifier <email> <titre> <texte> [url]   envoie une notification à chaque téléphone abonné du profil
 //   node outils/publier.js migrer <email>                           convertit data/semaine.js et data/prochaine.js et les publie
-// (bilan et notifier : lancer d'abord « npm install --prefix outils » pour web-push)
+// (web-push, pour les notifications, s'installe tout seul au premier envoi)
 const fs = require("fs"), path = require("path"), vm = require("vm");
 const URL_SB = "https://xstnbuoussiirpnitgep.supabase.co/rest/v1/";
 const KEY = process.env.SUPABASE_SECRET_KEY;
@@ -58,8 +59,31 @@ function verifier(table, d) {
 }
 
 // Notification push vers chaque téléphone abonné du profil ; les abonnements expirés sont supprimés
+function webPush() {
+  try { return require("web-push"); }
+  catch (e) {
+    require("child_process").execSync("npm install --prefix " + JSON.stringify(__dirname) + " --silent", { stdio: "ignore" });
+    return require("web-push");
+  }
+}
+// Semaine ISO (sXX) d'une date
+function semaineIso(d) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+  return "s" + Math.ceil(((t - Date.UTC(t.getUTCFullYear(), 0, 1)) / 864e5 + 1) / 7);
+}
+// Après publication des recettes : notification « recettes prêtes » (sans jamais faire échouer la publication)
+async function notifierRecettes(email, week, data) {
+  const noms = data.batch_cooking.sessions.map(s => s.recette).filter(Boolean);
+  const prochaine = week === semaineIso(new Date(Date.now() + 7 * 864e5));
+  const titre = prochaine ? "Tes recettes de la semaine prochaine sont prêtes" : "Tes recettes de la semaine sont prêtes";
+  const texte = (noms.length ? noms.join(", ") + ". " : "") + (prochaine ? "Choisis les tiennes et fais tes courses ce week-end." : "Choisis les tiennes dans l'onglet Nutrition.");
+  try { await notifier(email, titre, texte, "./?recettes"); }
+  catch (e) { console.log("notification non envoyée : " + e.message); }
+}
+
 async function notifier(email, titre, texte, lien) {
-  const webpush = require("web-push"), p = await profil(email);
+  const webpush = webPush(), p = await profil(email);
   const cles = Object.fromEntries((await api("reglages?select=cle,valeur&cle=in.(vapid_public,vapid_private)")).map(r => [r.cle, r.valeur]));
   if (!cles.vapid_private) throw new Error("clés VAPID absentes : lance push-cles");
   webpush.setVapidDetails("https://cliko.github.io/marcel/", cles.vapid_public, cles.vapid_private);
@@ -105,7 +129,9 @@ function lireAncien() {
     console.log(JSON.stringify(await api("profiles?select=id,prenom,email,role,actif,user_id,sport,nutrition,options,sport_maj,nutrition_maj&actif=eq.true&order=created_at"), null, 2));
   } else if (cmd === "programme" || cmd === "nutrition") {
     if (!email || !/^s\d+$/.test(week || "") || !fichier) throw new Error("usage : " + cmd + " <email> <sXX> <fichier.json>");
-    await ecrire(cmd === "programme" ? "programs" : "nutrition", email, week, JSON.parse(fs.readFileSync(fichier, "utf8")));
+    const data = JSON.parse(fs.readFileSync(fichier, "utf8"));
+    await ecrire(cmd === "programme" ? "programs" : "nutrition", email, week, data);
+    if (cmd === "nutrition" && !process.argv.includes("--sans-notif")) await notifierRecettes(email, week, data);
   } else if (cmd === "progression") {
     const p = await profil(email);
     if (!p.user_id) { console.log("null"); return; }
@@ -124,7 +150,7 @@ function lireAncien() {
   } else if (cmd === "push-cles") {
     const l = await api("reglages?select=cle&cle=in.(vapid_public,vapid_private)");
     if (l.length === 2) { console.log("clés VAPID déjà en place"); return; }
-    const k = require("web-push").generateVAPIDKeys();
+    const k = webPush().generateVAPIDKeys();
     await api("reglages?on_conflict=cle", { method: "POST", headers: { Prefer: "resolution=merge-duplicates" },
       body: JSON.stringify([{ cle: "vapid_public", valeur: k.publicKey }, { cle: "vapid_private", valeur: k.privateKey }]) });
     console.log("clés VAPID créées");

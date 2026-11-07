@@ -60,16 +60,18 @@ Le plan B des jours de flemme vient du profil (`options.plan_b` pour la basse de
 ### Notifications
 
 L'onglet Profil (et le bilan) proposent d'activer les notifications sur le téléphone (`js/notifications.js`, `sw.js`).
-Marcel prévient quand le bilan du samedi est prêt (le clic ouvre le bilan) et quand la nouvelle semaine est publiée.
+Marcel prévient quand le bilan du samedi est prêt (le clic ouvre le bilan), quand la nouvelle semaine est publiée, et quand les recettes
+sont prêtes : `publier.js nutrition` l'envoie tout seul après publication (le clic ouvre l'onglet Nutrition sur les recettes à venir,
+`./?recettes`) ; `--sans-notif` pour republier une correction sans renvoyer de notification.
 Sur Android, ça marche dans Chrome, appli installée ou non ; sur iPhone, seulement une fois l'appli ajoutée à l'écran d'accueil.
 Mise en place : lancer `supabase/notifications.sql` (tables `push_abonnements` et `reglages`), puis `node outils/publier.js push-cles`
-(crée les clés VAPID ; la clé privée reste dans Supabase, lisible seulement avec la clé secrète). Envoi : `npm install --prefix outils`
-puis `node outils/publier.js notifier <email> "<titre>" "<texte>" [url]`.
+(crée les clés VAPID ; la clé privée reste dans Supabase, lisible seulement avec la clé secrète). Envoi (web-push s'installe tout seul au
+premier envoi) : `node outils/publier.js notifier <email> "<titre>" "<texte>" [url]`.
 
 ### Publier (tâches planifiées)
 
 `outils/publier.js` (clé `SUPABASE_SECRET_KEY`) : `profils`, `progression <email> <sXX>`, `programme <email> <sXX> <fichier.json>`,
-`nutrition <email> <sXX> <fichier.json>`, `migrer <email>` (convertit les anciens `data/semaine.js` et `data/prochaine.js`).
+`nutrition <email> <sXX> <fichier.json> [--sans-notif]` (prévient le profil que ses recettes sont prêtes), `migrer <email>` (convertit les anciens `data/semaine.js` et `data/prochaine.js`).
 Le texte des tâches du dimanche et du vendredi est dans `outils/taches-planifiees.md`.
 
 ## Fichiers
