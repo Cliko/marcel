@@ -311,10 +311,23 @@ body.locked { overflow: hidden; }
       <div class="avatar" aria-hidden="true"><img src="icons/icon-192.png" alt=""></div>
       <div><div class="coach-name">Marcel</div><div class="eyebrow">Programme sportif</div></div>
     </div>
-    <p class="rules">Entre ton e-mail : un lien de connexion t'y attend. Une fois connecté, l'appli s'en souvient sur ce téléphone.</p>
+    <p class="rules">Entre ton e-mail : tu vas recevoir un lien de connexion à copier dans l'appli. Une fois connecté, l'appli s'en souvient sur ce téléphone.</p>
     <label for="login-email">E-mail<input type="email" id="login-email" autocomplete="email" required placeholder="toi@exemple.fr"></label>
     <button class="primary" id="login-btn" type="submit">Recevoir mon lien</button>
     <p class="rules" id="login-msg" role="status"></p>
+  </form>
+  <form class="login-card" id="code-form" hidden>
+    <div class="coach">
+      <div class="avatar" aria-hidden="true"><img src="icons/icon-192.png" alt=""></div>
+      <div><div class="coach-name">Marcel</div><div class="eyebrow">Programme sportif</div></div>
+    </div>
+    <p class="rules" id="code-info">E-mail envoyé.</p>
+    <p class="rules">Dans Mail, n'ouvre pas le lien : <strong>appuie longuement dessus &gt; Copier le lien</strong>, puis reviens ici.</p>
+    <button class="primary" id="code-paste" type="button">Coller le lien</button>
+    <label for="login-code">Ou colle-le / tape le code ici<input type="text" id="login-code" autocomplete="one-time-code" autocapitalize="off" autocorrect="off" spellcheck="false" required placeholder="https://… ou 123456"></label>
+    <button class="primary" id="code-btn" type="submit">Me connecter</button>
+    <p class="rules" id="code-msg" role="status"></p>
+    <button class="linkbtn" id="code-back" type="button">Changer d'e-mail ou renvoyer un lien</button>
   </form>
   <div class="login-card" id="login-stop">
     <div class="coach">

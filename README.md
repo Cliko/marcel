@@ -11,6 +11,15 @@ son lien, et remplit ses questionnaires sport et nutrition à la première ouver
 Le compte est rattaché au profil par l'e-mail (trigger `lier_profil`) ; une invitation sans profil créé avant est refusée (`verifier_invitation`).
 Chacun ne voit que ses données ; l'admin voit seulement l'état des profils.
 
+### Connexion sur iPhone (lien copié-collé)
+
+Sur iPhone, l'appli ajoutée à l'écran d'accueil ne partage pas sa session avec Safari : un lien magique ouvert depuis Mail
+connecte Safari, pas l'appli. Après l'envoi de l'e-mail, l'écran de connexion propose donc de **coller le lien** (appui long
+dans Mail > Copier le lien, sans l'ouvrir) : l'appli en lit le `token` et appelle `verifyOtp({ token_hash, type })`.
+Ça marche avec le modèle d'e-mail par défaut de Supabase (non modifiable sans SMTP personnalisé sur l'offre gratuite).
+Le même champ accepte un code à chiffres si un jour le modèle contient `{{ .Token }}`. Dans un navigateur, ouvrir le lien suffit.
+
+
 Le contenu de la semaine est propre à chaque profil et vit dans Supabase :
 
 - `programs` (profile_id, week = `"s46"`…, data) : programme sport, écrit le dimanche soir.
