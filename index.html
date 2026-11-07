@@ -278,6 +278,28 @@ body.locked { overflow: hidden; }
 .admin-btns { display: flex; gap: 6px; flex-wrap: wrap; }
 .admin-new { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
 .day.rest .day-note { padding-bottom: 4px; }
+/* Bilan de la semaine */
+#changements, .bilan { margin-bottom: 14px; }
+#changements summary { cursor: pointer; list-style: none; }
+#changements summary::-webkit-details-marker { display: none; }
+.bilan { border-color: var(--gold); background: linear-gradient(var(--gold-soft), var(--surface) 90px); }
+.bilan summary { cursor: pointer; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.bilan summary::-webkit-details-marker { display: none; }
+.bilan-etat { font-size: 14px; font-weight: 700; color: var(--gold); display: flex; justify-content: space-between; }
+.bilan-corps { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+.bilan-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.bilan-q { display: flex; flex-direction: column; gap: 6px; }
+.bilan-seg { border-radius: 10px; flex-wrap: wrap; }
+.bilan-seg button { flex: 1 1 auto; border-radius: 8px; }
+.bilan textarea { font: 15px var(--body); padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--chalk); color: var(--ink); resize: vertical; }
+.bilan-props { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--line); padding-top: 12px; }
+.prop { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.prop.oui { border-color: var(--done); background: var(--done-soft); }
+.prop.non { opacity: .7; }
+.prop-seg { align-self: flex-start; }
+.prop-seg button[data-v="non"][aria-pressed="true"] { background: var(--muted); }
+.avis { margin: 0 16px 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 14px; }
+.avis .alt-q { margin-right: 4px; }
 [hidden] { display: none !important; }
 </style>
 </head>
@@ -340,6 +362,8 @@ body.locked { overflow: hidden; }
 
 
     <section id="view-prog" role="tabpanel" aria-labelledby="tab-prog">
+      <div id="changements" hidden></div>
+      <div class="panel bilan" id="bilan" hidden></div>
       <div class="daypick" id="daypick" role="group" aria-label="Choisir le jour"></div>
       <div class="days" id="days"></div>
     </section>
@@ -418,6 +442,8 @@ body.locked { overflow: hidden; }
 <script src="data/refectory.js"></script>
 <script src="js/contenu.js"></script>
 <script src="js/profil.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/bilan.js"></script>
 <script src="js/stockage.js"></script>
 <!-- js/app.js est chargé par js/stockage.js une fois le profil et la semaine chargés -->
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});</script>

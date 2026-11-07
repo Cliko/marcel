@@ -6,7 +6,11 @@
 //   node outils/publier.js programme <email> <sXX> <fichier.json>   écrit programs (format : voir LISEZ-MOI)
 //   node outils/publier.js nutrition <email> <sXX> <fichier.json>   écrit nutrition (format de NUTRI)
 //   node outils/publier.js progression <email> <sXX>               affiche la progression de la semaine (JSON)
+//   node outils/publier.js bilan <email> <sXX> <fichier.json>       ajoute les propositions du samedi au programme de sXX (format : voir LISEZ-MOI)
+//   node outils/publier.js push-cles                                crée les clés VAPID des notifications si elles manquent
+//   node outils/publier.js notifier <email> <titre> <texte> [url]   envoie une notification à chaque téléphone abonné du profil
 //   node outils/publier.js migrer <email>                           convertit data/semaine.js et data/prochaine.js et les publie
+// (bilan et notifier : lancer d'abord « npm install --prefix outils » pour web-push)
 const fs = require("fs"), path = require("path"), vm = require("vm");
 const URL_SB = "https://xstnbuoussiirpnitgep.supabase.co/rest/v1/";
 const KEY = process.env.SUPABASE_SECRET_KEY;
@@ -35,6 +39,7 @@ async function ecrire(table, email, week, data) {
 function verifier(table, d) {
   const err = m => { throw new Error(table + " invalide : " + m); };
   if (table === "programs") {
+    if (d.changements && (!Array.isArray(d.changements) || !d.changements.every(c => typeof c === "string"))) err("changements = liste de phrases");
     if (!d.label || !Array.isArray(d.days) || d.days.length !== 7) err("label et 7 jours requis");
     d.days.forEach(j => {
       ["id", "date", "iso", "title"].forEach(k => j[k] || err(`jour sans ${k}`));
@@ -43,9 +48,33 @@ function verifier(table, d) {
     });
     (d.quests || []).forEach(q => (q.id && q.title && typeof q.xp === "number") || err("quête incomplète"));
     if (d.records && !d.records.every(r => r.id && r.label)) err("record incomplet");
+  } else if (table === "bilan") {
+    if (!Array.isArray(d.propositions) || d.propositions.length > 5) err("propositions requises (5 au plus)");
+    const ids = new Set();
+    d.propositions.forEach(p => { (p.id && p.titre) || err("proposition sans id ou titre"); ids.has(p.id) && err("id en double : " + p.id); ids.add(p.id); });
   } else {
     if (!Array.isArray(d.suivi_quotidien) || !d.batch_cooking || !Array.isArray(d.batch_cooking.sessions)) err("suivi_quotidien et batch_cooking.sessions requis");
   }
+}
+
+// Notification push vers chaque téléphone abonné du profil ; les abonnements expirés sont supprimés
+async function notifier(email, titre, texte, lien) {
+  const webpush = require("web-push"), p = await profil(email);
+  const cles = Object.fromEntries((await api("reglages?select=cle,valeur&cle=in.(vapid_public,vapid_private)")).map(r => [r.cle, r.valeur]));
+  if (!cles.vapid_private) throw new Error("clés VAPID absentes : lance push-cles");
+  webpush.setVapidDetails("https://cliko.github.io/marcel/", cles.vapid_public, cles.vapid_private);
+  const subs = await api(`push_abonnements?select=endpoint,abonnement&profile_id=eq.${p.id}`);
+  if (!subs.length) { console.log(`${p.prenom} : aucun téléphone abonné`); return; }
+  const charge = JSON.stringify({ title: titre, body: texte || "", url: lien || "./" });
+  let ok = 0;
+  for (const s of subs) {
+    try { await webpush.sendNotification(s.abonnement, charge, { TTL: 86400 }); ok++; }
+    catch (e) {
+      if (e.statusCode === 404 || e.statusCode === 410) await api("push_abonnements?endpoint=eq." + encodeURIComponent(s.endpoint), { method: "DELETE" });
+      else console.error(`envoi impossible (${e.statusCode || ""}) : ${e.body || e.message}`);
+    }
+  }
+  console.log(`${p.prenom} : notification envoyée à ${ok}/${subs.length} téléphone(s)`);
 }
 
 // Conversion de l'ancien format (data/semaine.js, data/prochaine.js) vers le format par profil
@@ -82,6 +111,27 @@ function lireAncien() {
     if (!p.user_id) { console.log("null"); return; }
     const l = await api(`progress?select=week,data,updated_at&user_id=eq.${p.user_id}&week=eq.${week}`);
     console.log(JSON.stringify(l[0] || null, null, 2));
+  } else if (cmd === "bilan") {
+    // Les propositions vont dans le programme de la semaine en cours (programs.data.bilan), sans toucher au reste
+    if (!email || !/^s\d+$/.test(week || "") || !fichier) throw new Error("usage : bilan <email> <sXX> <fichier.json>");
+    const b = JSON.parse(fs.readFileSync(fichier, "utf8")), p = await profil(email);
+    verifier("bilan", b);
+    const l = await api(`programs?select=data&profile_id=eq.${p.id}&week=eq.${week}`);
+    const data = { ...(l[0] ? l[0].data : {}), bilan: { ...b, maj: new Date().toISOString() } };
+    await api("programs?on_conflict=profile_id,week", { method: "POST", headers: { Prefer: "resolution=merge-duplicates" },
+      body: JSON.stringify({ profile_id: p.id, week, data, updated_at: new Date().toISOString() }) });
+    console.log(`bilan ${week} publié pour ${p.prenom} (${b.propositions.length} propositions)`);
+  } else if (cmd === "push-cles") {
+    const l = await api("reglages?select=cle&cle=in.(vapid_public,vapid_private)");
+    if (l.length === 2) { console.log("clés VAPID déjà en place"); return; }
+    const k = require("web-push").generateVAPIDKeys();
+    await api("reglages?on_conflict=cle", { method: "POST", headers: { Prefer: "resolution=merge-duplicates" },
+      body: JSON.stringify([{ cle: "vapid_public", valeur: k.publicKey }, { cle: "vapid_private", valeur: k.privateKey }]) });
+    console.log("clés VAPID créées");
+  } else if (cmd === "notifier") {
+    const [, , titre, texte, lien] = process.argv.slice(2);
+    if (!email || !titre) throw new Error("usage : notifier <email> <titre> <texte> [url]");
+    await notifier(email, titre, texte, lien);
   } else if (cmd === "migrer") {
     const a = lireAncien();
     await ecrire("programs", email, a.week, a.prog);

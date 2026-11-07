@@ -45,6 +45,27 @@ Le dimanche soir, dès que le programme de la semaine suivante est publié, l'ap
 `cardio: true` marque un jour d'endurance (bonus d'eau dans le suivi nutrition).
 Le plan B des jours de flemme vient du profil (`options.plan_b` pour la basse de Ben, sinon la réponse au questionnaire).
 
+### Bilan de la semaine
+
+- Après chaque séance validée, la personne peut dire « Trop facile / Bien / Trop dur » (`progress.data.bilan.avis`).
+- Dès le samedi, l'onglet Séance affiche le **bilan** (`js/bilan.js`) : résumé de la semaine, ressenti (forme, douleur, semaine à venir, remarque),
+  puis les propositions de Marcel à accepter ou refuser. Réponses dans `progress.data.bilan` :
+  `{ avis: {lun: "dur"}, forme: "fatigue", douleur: ["poignets"] (null = pas répondu), semaine: "chargee", remarque: "…", rep: {volume: true, pike: false} }`.
+- Le samedi soir, Marcel écrit ses propositions dans le programme de la semaine en cours (`programs.data.bilan`, commande `bilan` de `outils/publier.js`) :
+  `{ "intro": "…", "propositions": [{ "id": "volume", "titre": "Augmenter le volume de 10 %", "pourquoi": "…" }], "maj": "…" }`.
+  Pour un profil encore en programme de démarrage, la ligne ne contient que `bilan` et l'appli garde le programme de démarrage.
+- Le dimanche soir, la génération applique les propositions acceptées et écrit `changements` (liste de phrases) dans le nouveau programme,
+  affichés en haut de l'onglet Séance. Quête automatique « Bilan fait » (30 XP) pour chaque profil.
+
+### Notifications
+
+L'onglet Profil (et le bilan) proposent d'activer les notifications sur le téléphone (`js/notifications.js`, `sw.js`).
+Marcel prévient quand le bilan du samedi est prêt (le clic ouvre le bilan) et quand la nouvelle semaine est publiée.
+Sur Android, ça marche dans Chrome, appli installée ou non ; sur iPhone, seulement une fois l'appli ajoutée à l'écran d'accueil.
+Mise en place : lancer `supabase/notifications.sql` (tables `push_abonnements` et `reglages`), puis `node outils/publier.js push-cles`
+(crée les clés VAPID ; la clé privée reste dans Supabase, lisible seulement avec la clé secrète). Envoi : `npm install --prefix outils`
+puis `node outils/publier.js notifier <email> "<titre>" "<texte>" [url]`.
+
 ### Publier (tâches planifiées)
 
 `outils/publier.js` (clé `SUPABASE_SECRET_KEY`) : `profils`, `progression <email> <sXX>`, `programme <email> <sXX> <fichier.json>`,
@@ -59,14 +80,16 @@ Le texte des tâches du dimanche et du vendredi est dans `outils/taches-planifie
 - `js/contenu.js` : questions des questionnaires, programme et nutrition de démarrage, installation du contenu pour `js/app.js`.
 - `js/profil.js` : questionnaires, onglet Profil, espace admin.
 - `js/app.js` : rendu et interactions (chargé une fois le contenu installé).
+- `js/bilan.js` : bilan de la semaine, avis après chaque séance, changements de la semaine.
+- `js/notifications.js` : abonnement aux notifications push.
 - `data/refectory.js` : plats Refectory de la semaine, affichés seulement pour un profil avec `options.refectory` (Ben).
 - `data/semaine.js`, `data/prochaine.js` : ancien format, gardés pour la migration ; l'appli ne les lit plus.
 - `manifest.webmanifest`, `sw.js`, `icons/` : installation sur Android et mode hors ligne.
-- `supabase/schema.sql` : table `progress`. `supabase/profils.sql` : profils, programmes, nutrition, règles d'accès.
+- `supabase/schema.sql` : table `progress`. `supabase/profils.sql` : profils, programmes, nutrition, règles d'accès. `supabase/notifications.sql` : notifications push.
 
 ## Mise en place Supabase (une fois)
 
-1. SQL Editor : lancer `supabase/schema.sql`, puis `supabase/profils.sql` (crée aussi le profil admin de Ben).
+1. SQL Editor : lancer `supabase/schema.sql`, puis `supabase/profils.sql` (crée aussi le profil admin de Ben), puis `supabase/notifications.sql`.
 2. Authentication > URL Configuration : Site URL = `https://cliko.github.io/marcel/`.
 3. Authentication > Sign In / Providers : laisser les inscriptions **fermées**. On invite chaque personne depuis Authentication > Users,
    après avoir créé son profil dans l'appli.
