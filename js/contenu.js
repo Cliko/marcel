@@ -9,8 +9,7 @@ const imgUrl = q => "https://www.google.com/search?tbm=isch&q=" + encodeURICompo
 const Q_SPORT = [
   { id: "objectif", label: "Ton objectif principal", type: "one", options: [["perte_poids", "Perdre du poids"], ["force", "Prendre de la force"], ["endurance", "Endurance"], ["bien_etre", "Bien-être et mobilité"], ["reprise", "Reprendre en douceur"]] },
   { id: "niveau", label: "Ton niveau", type: "one", options: [["debutant", "Débutant"], ["intermediaire", "Intermédiaire"], ["confirme", "Confirmé"]] },
-  { id: "jours", label: "Les jours où tu peux faire du sport", type: "days" },
-  { id: "seances", label: "Séances par semaine", type: "one", options: [[2, "2"], [3, "3"], [4, "4"], [5, "5"], [6, "6"]] },
+  { id: "jours", label: "Tes jours de sport (une séance par jour coché)", type: "days" },
   { id: "duree", label: "Durée d'une séance", type: "one", options: [[15, "15 min"], [20, "20 min"], [30, "30 min"], [45, "45 min"], [60, "1 h"]] },
   { id: "envies", label: "Ce que tu as envie de faire", type: "many", options: [["callisthenie", "Callisthénie"], ["renfo", "Renfo"], ["hiit", "HIIT"], ["course", "Course"], ["velo", "Vélo"], ["natation", "Natation"], ["yoga", "Yoga et mobilité"], ["marche", "Marche"], ["danse", "Danse"]] },
   { id: "pas_envie", label: "Ce que tu n'aimes pas", type: "many", options: [["callisthenie", "Callisthénie"], ["renfo", "Renfo"], ["hiit", "HIIT"], ["course", "Course"], ["velo", "Vélo"], ["natation", "Natation"], ["yoga", "Yoga et mobilité"], ["sauts", "Sauts"]] },
@@ -36,7 +35,7 @@ const Q_NUTRI = [
   { id: "collations", label: "Des idées de collations ou desserts ?", type: "one", options: [["oui", "Oui"], ["non", "Non"]] },
   { id: "suivi", label: "Ce que tu veux suivre chaque jour", type: "many", options: [["eau", "Eau"], ["repas", "Mes repas"], ["defis", "Défis (sans alcool, sans fast food…)"]] },
 ];
-const Q_REQUIS = { sport: ["objectif", "niveau", "jours", "seances", "duree"], nutrition: ["objectif", "regime", "repas"] };
+const Q_REQUIS = { sport: ["objectif", "niveau", "jours", "duree"], nutrition: ["objectif", "regime", "repas"] };
 
 // Bibliothèque pour le programme de démarrage : [nom, conseil, séries débutant, séries intermédiaire, repos, recherche d'images]
 // besoin = matériel nécessaire (absent = poids du corps), evite = zones sollicitées, sauts = exercice avec impacts
@@ -131,9 +130,8 @@ function programmeDemarrage(sport, today) {
   const dispo = JOURS.map(j => j[0]).filter(id => (s.jours || []).includes(id));
   const fixes = (s.fixes || []).filter(f => f.activite && f.jour);
   const libres = dispo.filter(id => !fixes.some(f => f.jour === id));
-  const voulu = Math.max(1, Math.min(libres.length, (+s.seances || 3) - fixes.length));
-  // Répartit les séances sur les jours libres le plus régulièrement possible
-  const choisis = Array.from({ length: voulu }, (_, i) => libres[Math.floor(i * libres.length / voulu)]);
+  // Une séance par jour coché (les activités fixes prennent leur jour)
+  const choisis = libres;
   let k = 0;
   const days = JOURS.map(([id, court], i) => {
     const d = new Date(lundi); d.setDate(d.getDate() + i);

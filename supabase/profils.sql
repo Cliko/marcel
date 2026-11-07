@@ -120,7 +120,7 @@ create policy "nutrition perso" on public.nutrition for select to authenticated
 insert into public.profiles (user_id, email, prenom, role, options, sport, nutrition, sport_maj, nutrition_maj, vu_le)
 select u.id, lower(u.email), 'Ben', 'admin',
   '{"refectory": true, "plan_b": {"label": "Session de basse énergique", "court": "Basse", "options": [{"min": 45, "label": "45 min", "kcal": 450}, {"min": 60, "label": "1 h", "kcal": 520}, {"min": 90, "label": "1 h 30 et +", "kcal": 600}]}}'::jsonb,
-  '{"objectif": "perte_poids", "niveau": "intermediaire", "jours": ["lun","mar","mer","jeu","ven","sam","dim"], "seances": 5, "duree": 45, "envies": ["callisthenie","velo","natation"], "pas_envie": [], "materiel": ["rien","piscine","velo"], "fixes": [{"activite": "Vélo de route", "jour": "mer"}], "zones": [], "plan_b": "", "remarques": "Poids du corps uniquement, pas de barre de traction. Tirage sous une table ou à la serviette."}'::jsonb,
+  '{"objectif": "perte_poids", "niveau": "intermediaire", "jours": ["lun","mar","mer","jeu","ven","sam","dim"], "duree": 45, "envies": ["callisthenie","velo","natation"], "pas_envie": [], "materiel": ["rien","piscine","velo"], "fixes": [{"activite": "Vélo de route", "jour": "mer"}], "zones": [], "plan_b": "", "remarques": "Poids du corps uniquement, pas de barre de traction. Tirage sous une table ou à la serviette."}'::jsonb,
   '{"objectif": "perte_poids", "regime": "omnivore", "allergies": [], "evites": "champignons, concombre, courgette (bof, à réessayer), trop de pâtes", "repas": ["soir"], "midi": "cantine", "recettes": 3, "parts": 4, "budget": 4, "temps": 45, "collations": "non", "suivi": ["eau","repas","defis"]}'::jsonb,
   now(), now(), now()
 from auth.users u where lower(u.email) = 'clikoben@gmail.com'
