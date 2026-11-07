@@ -11,6 +11,20 @@ son lien, et remplit ses questionnaires sport et nutrition à la première ouver
 Le compte est rattaché au profil par l'e-mail (trigger `lier_profil`) ; une invitation sans profil créé avant est refusée (`verifier_invitation`).
 Chacun ne voit que ses données ; l'admin voit seulement l'état des profils.
 
+### Connexion par code (iPhone)
+
+Sur iPhone, l'appli ajoutée à l'écran d'accueil ne partage pas sa session avec Safari : un lien magique ouvert depuis Mail
+connecte Safari, pas l'appli. L'écran de connexion demande donc l'e-mail, puis le code à 6 chiffres reçu (`verifyOtp`, type `email`).
+Le lien du même e-mail reste valable dans un navigateur. Pour que le code figure dans l'e-mail, les modèles Supabase
+(Authentication > Emails > Templates) **Magic Link** et **Confirm signup** contiennent `{{ .Token }}`, par exemple :
+
+```html
+<h2>Connexion à Marcel</h2>
+<p>Ton code : <strong style="font-size:24px;letter-spacing:4px">{{ .Token }}</strong></p>
+<p>Tape-le dans l'appli. Sur ordinateur, tu peux aussi <a href="{{ .ConfirmationURL }}">te connecter avec ce lien</a>.</p>
+```
+
+
 Le contenu de la semaine est propre à chaque profil et vit dans Supabase :
 
 - `programs` (profile_id, week = `"s46"`…, data) : programme sport, écrit le dimanche soir.

@@ -1,4 +1,4 @@
-// Connexion par lien magique (e-mail d'un profil invité), chargement du profil et du contenu de la semaine, sauvegarde de la progression.
+// Connexion par code reçu par e-mail (ou lien magique dans le navigateur, profil invité), chargement du profil et du contenu de la semaine, sauvegarde de la progression.
 // Tables (voir supabase/profils.sql) : profiles, programs et nutrition (une ligne par profil et par semaine), progress (une ligne par compte et par semaine).
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 const emptyFood = () => ({ daily: {}, water: {}, batch: {}, courses: {}, pick: {} });
@@ -28,26 +28,58 @@ async function loadProgress() {
   setSync("Progression enregistrée en ligne.");
 }
 
-// Écran de connexion : on tape son e-mail ; le lien part seulement si l'adresse a déjà un compte.
+// Écran de connexion : on tape son e-mail, on reçoit un code à taper dans l'appli (le lien du même e-mail marche aussi dans le navigateur).
+// Le code est indispensable sur iPhone : l'appli ajoutée à l'écran d'accueil ne partage pas sa session avec Safari, où s'ouvre le lien.
 // Les inscriptions sont fermées : l'admin crée le profil dans l'appli puis invite la personne depuis Supabase.
-const login = document.getElementById("login");
+const login = document.getElementById("login"), loginForm = document.getElementById("login-form"), codeForm = document.getElementById("code-form");
+let emailEnCours = "";
 function showLogin(on, msg) {
   login.hidden = !on; document.body.classList.toggle("locked", on);
-  document.getElementById("login-form").hidden = !!msg;
+  loginForm.hidden = !!msg; codeForm.hidden = true;
   document.getElementById("login-stop").hidden = !msg;
   if (msg) { document.getElementById("login-stop-msg").textContent = msg; document.getElementById("login-out").hidden = false; }
 }
-document.getElementById("login-form").addEventListener("submit", async e => {
+function etapeCode(email) {
+  emailEnCours = email;
+  loginForm.hidden = true; codeForm.hidden = false;
+  document.getElementById("code-info").textContent = "Code envoyé à " + email + ". Tape-le ici (pas besoin d'ouvrir le lien).";
+  document.getElementById("code-msg").textContent = "";
+  const input = document.getElementById("login-code"); input.value = ""; input.focus();
+}
+loginForm.addEventListener("submit", async e => {
   e.preventDefault();
   const btn = document.getElementById("login-btn"), email = document.getElementById("login-email").value.trim().toLowerCase();
   if (!email) return;
   btn.disabled = true;
   const { error } = await envoyerLien(email);
-  document.getElementById("login-msg").textContent = error ? messageLien(error) : "E-mail envoyé : ouvre le lien reçu sur ce téléphone.";
   btn.disabled = false;
+  if (error) { document.getElementById("login-msg").textContent = messageLien(error); return; }
+  document.getElementById("login-msg").textContent = "";
+  etapeCode(email);
+});
+codeForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  const btn = document.getElementById("code-btn"), msg = document.getElementById("code-msg");
+  const token = document.getElementById("login-code").value.replace(/\D/g, "");
+  if (token.length < 6) { msg.textContent = "Le code fait 6 chiffres."; return; }
+  btn.disabled = true; msg.textContent = "Vérification…";
+  const { error } = await sb.auth.verifyOtp({ email: emailEnCours, token, type: "email" });
+  btn.disabled = false;
+  // En cas de succès, onAuthStateChange démarre l'appli.
+  msg.textContent = error ? messageCode(error) : "Connecté !";
+});
+document.getElementById("code-back").addEventListener("click", () => {
+  codeForm.hidden = true; loginForm.hidden = false;
+  document.getElementById("login-msg").textContent = "";
 });
 function envoyerLien(email) {
   return sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname } });
+}
+function messageCode(error) {
+  const m = (error.message || "").toLowerCase();
+  if (m.includes("expired") || m.includes("invalid") || error.status === 403) return "Code incorrect ou expiré. Vérifie le dernier e-mail reçu, ou demande un nouveau code.";
+  if (error.status === 429 || m.includes("rate limit")) return "Trop d'essais : réessaie dans quelques minutes.";
+  return "Connexion impossible : " + error.message;
 }
 function messageLien(error) {
   const m = (error.message || "").toLowerCase();
