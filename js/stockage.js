@@ -28,8 +28,9 @@ async function loadProgress() {
   setSync("Progression enregistrée en ligne.");
 }
 
-// Écran de connexion : on tape son e-mail, on reçoit un code à taper dans l'appli (le lien du même e-mail marche aussi dans le navigateur).
-// Le code est indispensable sur iPhone : l'appli ajoutée à l'écran d'accueil ne partage pas sa session avec Safari, où s'ouvre le lien.
+// Écran de connexion : on tape son e-mail, puis on colle dans l'appli le lien reçu (ou on tape le code si le modèle d'e-mail en contient un).
+// Indispensable sur iPhone : l'appli ajoutée à l'écran d'accueil ne partage pas sa session avec Safari, où s'ouvrirait le lien.
+// Le lien Supabase (…/auth/v1/verify?token=…&type=magiclink) porte le « token hash » : verifyOtp({ token_hash, type }) l'accepte.
 // Les inscriptions sont fermées : l'admin crée le profil dans l'appli puis invite la personne depuis Supabase.
 const login = document.getElementById("login"), loginForm = document.getElementById("login-form"), codeForm = document.getElementById("code-form");
 let emailEnCours = "";
@@ -42,9 +43,9 @@ function showLogin(on, msg) {
 function etapeCode(email) {
   emailEnCours = email;
   loginForm.hidden = true; codeForm.hidden = false;
-  document.getElementById("code-info").textContent = "Code envoyé à " + email + ". Tape-le ici (pas besoin d'ouvrir le lien).";
+  document.getElementById("code-info").textContent = "E-mail envoyé à " + email + ".";
   document.getElementById("code-msg").textContent = "";
-  const input = document.getElementById("login-code"); input.value = ""; input.focus();
+  document.getElementById("login-code").value = "";
 }
 loginForm.addEventListener("submit", async e => {
   e.preventDefault();
@@ -60,14 +61,39 @@ loginForm.addEventListener("submit", async e => {
 codeForm.addEventListener("submit", async e => {
   e.preventDefault();
   const btn = document.getElementById("code-btn"), msg = document.getElementById("code-msg");
-  const token = document.getElementById("login-code").value.replace(/\D/g, "");
-  if (token.length < 6) { msg.textContent = "Le code fait 6 chiffres."; return; }
+  await verifier(document.getElementById("login-code").value);
+});
+document.getElementById("code-paste").addEventListener("click", async () => {
+  let t = "";
+  try { t = await navigator.clipboard.readText(); } catch (e) {}
+  if (!t) { document.getElementById("code-msg").textContent = "Impossible de lire le presse-papiers : colle le lien dans le champ ci-dessous."; document.getElementById("login-code").focus(); return; }
+  document.getElementById("login-code").value = t;
+  await verifier(t);
+});
+// Lien collé → token hash ; sinon code à chiffres
+function lireSaisie(texte) {
+  const t = (texte || "").trim(), m = t.match(/https?:\/\/\S+/);
+  if (m) {
+    try {
+      const u = new URL(m[0]), q = new URLSearchParams(u.search + "&" + u.hash.slice(1));
+      const hash = q.get("token_hash") || q.get("token");
+      if (hash) return { token_hash: hash, type: q.get("type") || "email" };
+    } catch (e) {}
+    return null;
+  }
+  const code = t.replace(/\D/g, "");
+  return code.length >= 6 ? { email: emailEnCours, token: code, type: "email" } : null;
+}
+async function verifier(texte) {
+  const btn = document.getElementById("code-btn"), msg = document.getElementById("code-msg");
+  const params = lireSaisie(texte);
+  if (!params) { msg.textContent = "Ce n'est pas le lien de l'e-mail Marcel. Appuie longuement sur le lien dans Mail > Copier le lien."; return; }
   btn.disabled = true; msg.textContent = "Vérification…";
-  const { error } = await sb.auth.verifyOtp({ email: emailEnCours, token, type: "email" });
+  const { error } = await sb.auth.verifyOtp(params);
   btn.disabled = false;
   // En cas de succès, onAuthStateChange démarre l'appli.
   msg.textContent = error ? messageCode(error) : "Connecté !";
-});
+}
 document.getElementById("code-back").addEventListener("click", () => {
   codeForm.hidden = true; loginForm.hidden = false;
   document.getElementById("login-msg").textContent = "";
@@ -77,7 +103,7 @@ function envoyerLien(email) {
 }
 function messageCode(error) {
   const m = (error.message || "").toLowerCase();
-  if (m.includes("expired") || m.includes("invalid") || error.status === 403) return "Code incorrect ou expiré. Vérifie le dernier e-mail reçu, ou demande un nouveau code.";
+  if (m.includes("expired") || m.includes("invalid") || error.status === 403) return "Lien ou code expiré, déjà utilisé ou incorrect. Prends le dernier e-mail reçu, ou demande un nouveau lien.";
   if (error.status === 429 || m.includes("rate limit")) return "Trop d'essais : réessaie dans quelques minutes.";
   return "Connexion impossible : " + error.message;
 }
