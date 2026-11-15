@@ -91,11 +91,18 @@ async function notifier(email, titre, texte, lien) {
   if (!subs.length) { console.log(`${p.prenom} : aucun téléphone abonné`); return; }
   const charge = JSON.stringify({ title: titre, body: texte || "", url: lien || "./" });
   let ok = 0;
+  // Résultat rangé dans push_abonnements (affiché dans l'onglet Profil et l'admin) ; ignoré si les colonnes n'existent pas encore
+  const suivi = (s, ok, erreur) => api("push_abonnements?endpoint=eq." + encodeURIComponent(s.endpoint), { method: "PATCH",
+    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ envoi_le: new Date().toISOString(), envoi_ok: ok, envoi_erreur: erreur }) }).catch(() => {});
   for (const s of subs) {
-    try { await webpush.sendNotification(s.abonnement, charge, { TTL: 86400 }); ok++; }
+    try { await webpush.sendNotification(s.abonnement, charge, { TTL: 86400 }); ok++; await suivi(s, true, null); }
     catch (e) {
       if (e.statusCode === 404 || e.statusCode === 410) await api("push_abonnements?endpoint=eq." + encodeURIComponent(s.endpoint), { method: "DELETE" });
-      else console.error(`envoi impossible (${e.statusCode || ""}) : ${e.body || e.message}`);
+      else {
+        const msg = `${e.statusCode || ""} ${String(e.body || e.message).slice(0, 200)}`.trim();
+        console.error(`envoi impossible : ${msg}`);
+        await suivi(s, false, msg);
+      }
     }
   }
   console.log(`${p.prenom} : notification envoyée à ${ok}/${subs.length} téléphone(s)`);
