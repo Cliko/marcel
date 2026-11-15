@@ -2,17 +2,12 @@
 // Ben commande le lundi, mardi et jeudi ; le mercredi seulement s'il est au bureau ; jamais le vendredi (télétravail).
 // null = pas de sélection cette semaine. Champs : jours[].date (AAAA-MM-JJ), jours[].note (facultatif), jours[].choix[] = {nom, kcal, proteines, prix, pourquoi}.
 const REFECT_PICKS = {
-  "semaine": "s46",
-  "maj": "2026-11-09",
+  "semaine": "s47",
+  "maj": "2026-11-15",
   "jours": [
-    {"date": "2026-11-09", "choix": [
-      {"nom": "Bowl poulet sésame", "kcal": 540, "proteines": 25, "prix": 10.9, "pourquoi": "Poulet, boulgour, carottes rôties et edamame"},
-      {"nom": "Parmentier de lentilles & potimarron", "kcal": 416, "proteines": 16, "prix": 9.9, "pourquoi": "Le plus léger de la carte, lentilles et courge riches en fibres"}]},
-    {"date": "2026-11-10", "choix": [
-      {"nom": "Cabillaud, aux épices douces & butternut", "kcal": 382, "proteines": 21, "prix": 13.9, "pourquoi": "Poisson blanc et courge, le moins calorique du jour"},
-      {"nom": "Poulet paprika, écrasé à l'huile d'olive & fondue de poireaux", "kcal": 454, "proteines": 24, "prix": 12.9, "pourquoi": "Poulet et poireaux, petite portion de pomme de terre"}]},
-    {"date": "2026-11-12", "choix": [
-      {"nom": "Crevettes sautées aux deux poivres", "kcal": 479, "proteines": 18, "prix": 11.9, "pourquoi": "Crevettes, poivrons et riz basmati, sans crème"},
-      {"nom": "Lieu noir, purée de butternut et graines de courges", "kcal": null, "proteines": null, "prix": 12.2, "pourquoi": "Poisson poêlé et courge, peu de féculent"}]}
+    {"date": "2026-11-16", "choix": [{"nom": "Colin, sauce vierge d'hiver et riz complet", "kcal": 496, "proteines": 24, "prix": 12.9, "pourquoi": "Poisson blanc, riz complet et brocolis, sauce à l'huile d'olive, le plus léger du jour"}, {"nom": "Bowl poulet sésame", "kcal": 540, "proteines": 25, "prix": 10.9, "pourquoi": "Poulet, boulgour, carottes rôties et edamame, riche en fibres"}]},
+    {"date": "2026-11-17", "choix": [{"nom": "Salade façon César", "kcal": 644, "proteines": 37, "prix": 10.5, "pourquoi": "Le plus protéiné de la carte (poulet, œufs) ; un peu de pâtes, garde la sauce légère"}, {"nom": "Mini Saint-Jacques, topinambour, émulsion d'agrumes", "kcal": 491, "proteines": 20, "prix": 13.9, "pourquoi": "Fruits de mer et topinambour, calories modérées (un peu de crème dans la purée)"}]},
+    {"date": "2026-11-18", "note": "si tu es au bureau", "choix": [{"nom": "Bowl poulet sésame", "kcal": 540, "proteines": 25, "prix": 10.9, "pourquoi": "Poulet, boulgour, carottes rôties et edamame, riche en fibres"}, {"nom": "Salade façon César", "kcal": 644, "proteines": 37, "prix": 10.5, "pourquoi": "Le plus protéiné de la carte (poulet, œufs) ; un peu de pâtes, garde la sauce légère"}]},
+    {"date": "2026-11-19", "choix": [{"nom": "Curry jaune de crevettes", "kcal": 521, "proteines": 32, "prix": 11.9, "pourquoi": "Nouveau : crevettes, poivrons et riz, 32 g de protéines"}, {"nom": "Colin, sauce vierge d'hiver et riz complet", "kcal": 496, "proteines": 24, "prix": 12.9, "pourquoi": "Poisson blanc, riz complet et brocolis, sauce à l'huile d'olive, le plus léger du jour"}]}
   ]
 };
