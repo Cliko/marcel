@@ -76,6 +76,11 @@ Sur Android, ça marche dans Chrome, appli installée ou non ; sur iPhone, seule
 Mise en place : lancer `supabase/notifications.sql` (tables `push_abonnements` et `reglages`), puis `node outils/publier.js push-cles`
 (crée les clés VAPID ; la clé privée reste dans Supabase, lisible seulement avec la clé secrète). Envoi (web-push s'installe tout seul au
 premier envoi) : `node outils/publier.js notifier <email> "<titre>" "<texte>" [url]`.
+Fiabilité : à chaque ouverture, si les notifications sont autorisées, l'appli refait l'abonnement et le range à nouveau (`vu_le`),
+au cas où le navigateur l'a changé ou que Marcel l'a supprimé après un 404/410. `notifier` note chaque envoi (`envoi_le`, `envoi_ok`,
+`envoi_erreur`) ; l'onglet Profil affiche le dernier envoi et un bouton « Tester » (notification locale, sans Google ni Apple :
+elle vérifie que le téléphone affiche bien les notifications), et l'admin voit les téléphones abonnés de chaque profil.
+Hébergement des tâches : l'environnement cloud doit autoriser `web.push.apple.com` pour les iPhone (fcm.googleapis.com passe déjà).
 
 ### Publier (tâches planifiées)
 

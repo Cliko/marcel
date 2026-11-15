@@ -38,3 +38,13 @@ create policy "abonnement supprimé" on public.push_abonnements for delete to au
 drop policy if exists "clé publique lue" on public.reglages;
 create policy "clé publique lue" on public.reglages for select to authenticated
   using (cle = 'vapid_public');
+
+-- Suivi des envois (ajouté le 15/11/2026) : dernière ouverture de l'appli sur ce téléphone, dernier envoi et son résultat
+-- (rempli par `publier.js notifier`). L'admin voit l'état des téléphones de chaque profil.
+alter table public.push_abonnements add column if not exists vu_le timestamptz;
+alter table public.push_abonnements add column if not exists envoi_le timestamptz;
+alter table public.push_abonnements add column if not exists envoi_ok boolean;
+alter table public.push_abonnements add column if not exists envoi_erreur text;
+drop policy if exists "abonnements vus par l'admin" on public.push_abonnements;
+create policy "abonnements vus par l'admin" on public.push_abonnements for select to authenticated
+  using ((select public.is_admin()));

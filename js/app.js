@@ -337,3 +337,4 @@ if (/[?&]recettes\b/.test(location.search)) {
 }
 renderAll(true);
 loadProgress();
+rafraichirAbonnement();

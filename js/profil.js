@@ -124,13 +124,24 @@ function etat(x) {
   if (!x.sport_maj || !x.nutrition_maj) return "Connecté, questionnaire à finir";
   return "Prêt" + (x.vu_le ? " · vu le " + dateCourte(x.vu_le) : "");
 }
+// État des notifications d'un profil pour l'admin
+function etatNotifs(l) {
+  if (!l || !l.length) return "🔕 Aucun téléphone abonné aux notifications";
+  const envois = l.filter(r => r.envoi_le).sort((a, b) => b.envoi_le.localeCompare(a.envoi_le)), dernier = envois[0];
+  return `🔔 ${l.length} téléphone${l.length > 1 ? "s" : ""}` + (dernier ? ` · dernier envoi ${dateCourte(dernier.envoi_le)} ${dernier.envoi_ok ? "réussi" : "en échec"}` : " · aucun envoi suivi");
+}
 async function renderAdmin(msg) {
   const body = document.getElementById("admin-body"); if (!body) return;
   const { data, error } = await sb.from("profiles").select("id,prenom,email,role,actif,user_id,sport_maj,nutrition_maj,lien_envoye_le,vu_le").order("created_at");
   if (error) { body.innerHTML = `<p class="rules">Impossible de charger les profils (hors ligne ?).</p>`; return; }
   adminProfils = data;
+  // Téléphones abonnés aux notifications, par profil (colonnes de suivi : dernière version de supabase/notifications.sql)
+  let tel = {};
+  const ab = await sb.from("push_abonnements").select("profile_id,vu_le,envoi_le,envoi_ok");
+  if (!ab.error) for (const r of ab.data) (tel[r.profile_id] = tel[r.profile_id] || []).push(r);
+  else tel = null;
   body.innerHTML = `<ul class="checklist admin-list">${data.map(x => `<li class="${x.actif ? "" : "off"}"><div><span class="ex-name">${esc(x.prenom)}${x.role === "admin" ? ' <span class="auto-tag">· admin</span>' : ""}</span>
-      <span class="ex-tip">${esc(x.email)} · ${esc(etat(x))}</span></div>
+      <span class="ex-tip">${esc(x.email)} · ${esc(etat(x))}</span>${tel ? `<span class="ex-tip">${esc(etatNotifs(tel[x.id]))}</span>` : ""}</div>
       ${x.id === PROFIL.id ? "" : `<span class="admin-btns">${x.actif && x.user_id ? `<button type="button" class="linkbtn" data-admin="lien" data-id="${x.id}">Renvoyer un lien</button>` : ""}
         <button type="button" class="linkbtn" data-admin="${x.actif ? "off" : "on"}" data-id="${x.id}">${x.actif ? "Désactiver" : "Réactiver"}</button></span>`}</li>`).join("")}</ul>
     <form class="admin-new" id="admin-new"><div class="eyebrow">Nouveau profil</div>
