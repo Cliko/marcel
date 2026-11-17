@@ -55,3 +55,9 @@ Pour Ben (role admin) : reprends son suivi_quotidien TEL QUEL (Midi : Refectory,
 4) Publie : `node outils/publier.js nutrition <email> sYY /tmp/nutri-<prenom>.json` (la commande envoie toute seule la notification « Tes recettes de la semaine prochaine sont prêtes » aux téléphones abonnés du profil ; ajoute `--sans-notif` seulement pour republier une correction). Archive le fichier dans /mnt/project-files/nutrition/ (semaine-YY.json pour Ben, <prenom>-semaine-YY.json pour les autres).
 
 5) Poste à Ben dans le fil un message court en français : ses 3 recettes avec leur prix par part, puis une ligne par autre profil (recettes publiées), et le lien https://cliko.github.io/marcel/ (onglet Nutrition).
+
+## Sur appel de Supabase : « Recettes d'un nouveau profil »
+
+Pas d'horaire : la tâche (trig_01R4JRDLFpQmYD9HtXBkvgna) ne part que lorsque Supabase l'appelle, c'est-à-dire quand un profil remplit son questionnaire nutrition pour la première fois (déclencheur `supabase/declencheur-recettes.sql`, qui envoie « profil: <email> »). Elle génère alors les recettes de ce profil pour la semaine en cours (du lundi au jeudi) ou la suivante (du vendredi au dimanche), avec les règles du vendredi, si elles n'existent pas déjà. Elle remplace l'ancienne vérification de 12 h 17 et 20 h 17, qui ouvrait un fil vide deux fois par jour.
+
+Mise en place (une fois) : claude.ai/code/routines > « Recettes d'un nouveau profil » > Edit > Trigger + > API > Generate token ; coller le jeton dans `supabase/declencheur-recettes.sql` (à la place de COLLE_LE_JETON) et lancer ce fichier dans Supabase > SQL Editor. Si la tâche est recréée, son identifiant change : mettre à jour l'URL dans le fichier SQL et générer un nouveau jeton. Contrôle : `select status_code, content, created from net._http_response order by created desc limit 5;` (200 = tâche lancée).
