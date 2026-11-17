@@ -15,9 +15,9 @@ declare v uuid;
 begin
   select id into v from vault.secrets where name = 'marcel_recettes_token';
   if v is null then
-    perform vault.create_secret('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', 'marcel_recettes_token', 'Jeton de la tâche « Recettes d''un nouveau profil »');
+    perform vault.create_secret('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', 'marcel_recettes_token', 'Jeton de la tâche « Recettes d''un nouveau profil »');
   else
-    perform vault.update_secret(v, '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');
+    perform vault.update_secret(v, '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');
   end if;
 end $$;
 
