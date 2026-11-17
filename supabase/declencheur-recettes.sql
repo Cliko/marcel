@@ -15,9 +15,9 @@ declare v uuid;
 begin
   select id into v from vault.secrets where name = 'marcel_recettes_token';
   if v is null then
-    perform vault.create_secret('COLLE_LE_JETON', 'marcel_recettes_token', 'Jeton de la tâche « Recettes d''un nouveau profil »');
+    perform vault.create_secret('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', 'marcel_recettes_token', 'Jeton de la tâche « Recettes d''un nouveau profil »');
   else
-    perform vault.update_secret(v, 'COLLE_LE_JETON');
+    perform vault.update_secret(v, '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');
   end if;
 end $$;
 
